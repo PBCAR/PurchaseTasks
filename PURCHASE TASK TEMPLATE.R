@@ -5,10 +5,10 @@
 ##### ----------  REQUIRED CHANGES BY USER:
 #################################################################################################
 ### a) CHANGE file directory - GO TO: SESSION > SET WORKING DIRECTORY > CHOOSE DIRECTORY
-setwd("~/Desktop/PBCAR/")
+setwd("~/Desktop/PBCAR/PT REPORT R")
 
 ### b) NAME of .CSV file:
-pt.name <- "purchase_task.csv"
+pt.name <- "PRACTICE MPT2.csv"
 
 ### c) SELECT TYPE of purchase task: APT, CPT, OR MPT:
 pt.task <- "MPT"
@@ -20,7 +20,7 @@ purchase.task.names <- c("id","mpt0","mpt1","mpt2","mpt4","mpt6",
                          "mpt50","mpt55","mpt60")
 
 ### e) CHANGE to = total N participants in data set
-tot.part <- 500
+tot.part <- 396
 
 ##### ----------  OPTIONAL CHANGES:
 #################################################################################################
@@ -166,7 +166,7 @@ for (id_num in purchase.task.df2$id){
   if (num.bounces/(length(prices)-1) > 0.1){
     purchase.task.df2 <- purchase.task.df2[!purchase.task.df2[,"id"] %in% c(id_num),]
     remove.id.bounce <- append(remove.id.bounce,id_num)
-    cat("ID # ",id_num,"has bounce ratio:", num.bounces/(length(prices)-1),"and is being removed.\n")
+    cat("ID",id_num,"has bounce ratio:", num.bounces/(length(prices)-1),"and is being removed.\n")
   }
 }
 
@@ -386,7 +386,7 @@ for (id_num in one.rev.list){
   cons.vals <- PT.wide2[PT.wide2$id==id_num,]
   for (price in prices){
     if (cons.vals[,price]==0){
-      cat('The breakpoint for ID # ',id_num,'has been changed from',
+      cat('The breakpoint for ID',id_num,'has been changed from',
           PT.final.results[PT.final.results$id==id_num,]$Breakpoint,'to',as.numeric(price))
       PT.final.results[PT.final.results$id==id_num,]$Breakpoint <- as.numeric(price)
       break
@@ -417,7 +417,7 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
   above_399 <- unique(all_out[,c(var_name)][alpha_zs > 3.99])
   below_neg399 <- unique(all_out[,c(var_name)][alpha_zs < -3.99])
   cat('There is/are',length(c(all_out[,c(var_name)][alpha_zs > 3.99],all_out[,c(var_name)][alpha_zs < -3.99])),
-      'outlying ',var_name,' value/s.\n')
+      'outlying ',var_name,' value(s): \n')
   alpha_outliers <- append(above_399, below_neg399)
   # WINSORIZATION TYPE 3 - to preserve order
   if (wins.type=="preserve_order"){
@@ -426,9 +426,9 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(above_399)>0){
       q <- 1
       for (ab_399 in sort(above_399)){
-        print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
-        cat('For ID ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),', its ',var_name,' value was changed from ',
-            ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta,sep='')
+       # print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
+        cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),' the ',var_name,' value was changed from ',
+            ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
         q <- q + 1
       }
@@ -436,9 +436,9 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(below_neg399)>0){
       for (bel_399 in sort(below_neg399,decreasing = TRUE)){
         q <- 1
-        print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
-        cat('For ID ',all_out[all_out[,c(var_name)] == bel_399,c('id')],', its ',var_name,' value was changed from',
-            bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta,sep='')
+       # print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
+        cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],' the ',var_name,' value was changed from',
+            bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == bel_399] <- min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta
         q <- q + 1
       }
@@ -506,7 +506,7 @@ cat('Outliers:\n',nrow(df.winsor.track),' outlying values (',
 cat('K values tested:',k.span,'\n')
 cat('K value selected: ',min(PT.W.index$K),'\n',sep='')
 cat('R^2 for mean values: ',PT.final.results[PT.final.results$id=='mean.curve',]$R2,'\n',sep='')
-cat('Median R^2 for individual participants: ',median(PT.W.index$R2,na.rm=TRUE),
+cat('Median R^2: ',median(PT.W.index$R2,na.rm=TRUE),
     ' (Interquartile range: ', IQR(PT.W.index$R2,na.rm=TRUE),'; min = ',min(PT.W.index$R2,na.rm=TRUE),
     ', max = ',max(PT.W.index$R2,na.rm=TRUE),')\n',sep='')
 
