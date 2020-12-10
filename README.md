@@ -37,4 +37,6 @@ iii) "price.level.variables.csv" - This provides the descriptive statistics of t
 iv) "Appendix A.csv" - This provides a table of all the outlying values that were changed by ID
 
 
+# Heat Map Template
+
 
