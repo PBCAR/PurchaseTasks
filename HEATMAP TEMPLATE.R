@@ -12,9 +12,9 @@ setwd("~/Desktop/PBCAR")   ### CHANGE FILE DIRECTORY
 
 heatmap.name <- "PBCAR.APT.csv"
 
-# c) SELECT only the "ID", AND the names of the variables you want to analyze
+# c) SELECT only the names of the variables you want to analyze
 
-heatmap.items <- c("ID", "Alpha","Intensity","Omax_w","Pmax_w","Breakpoint")
+heatmap.items <- c("Alpha","Intensity","Omax_w","Pmax_w","Breakpoint")
 
 ##### ----------  OPTIONAL CHANGES:
 #################################################################################################
@@ -43,6 +43,10 @@ library(Hmisc)
 
 # READS IN the .csv file & ASSIGNS the DF name
 heatmap.df <- read.csv(heatmap.name)
+
+# SELECTS only the variables to be analyzed
+
+hmap.df <- heatmap.df[c(heatmap.items)]
 
 # ASSIGNS the new item order to the new data frame
 hmap.df <- heatmap.df[,item.reorder]
@@ -132,3 +136,6 @@ write.csv(melted.corr.pval,"heatmap.pvalues.csv")
 ### CHECK # OF OBS per correlation pair
 #################################################################################################
 (corr.pair.numbers <- correlation.matrix[["n"]])
+
+### OPTIONAL WRITE A .csv file with the number of correlation pairs
+write.csv(corr.pair.numbers, "corr.pair.numbers.csv")
