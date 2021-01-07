@@ -15,7 +15,7 @@ knitr::opts_chunk$set(error = TRUE, comment = "", results = 'asis')
 ###    REPORT WILL BE SAVED IN THIS LOCATION
 
 ### B) INPUT NAME OF .CSV FILE IN QUOTES
-pt.name <- "Practice MPT2.csv" 
+pt.name <- "PT.MPT.csv" 
 
 ### C) SELECT only the "ID", AND the names of the purchase task variables you want to analyze
 ###    COPY AND PASTE NAMES OF ID + PURCHASE TASK VARIABLE NAMES HERE:
@@ -29,7 +29,7 @@ purchase.task.names <- c("ID","mpt0","mpt1","mpt2","mpt4","mpt6",
 pt.task <- "MPT"
 
 ### E) CHANGE to = total N participants in data set
-tot.part <- 396
+tot.part <- 500
 
 ##### ----------  OPTIONAL CHANGES:
 ###############################################################################################
