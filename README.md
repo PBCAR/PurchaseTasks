@@ -70,3 +70,7 @@ i) The heatmap itself
 ii) 'heatmap.pvalues.csv' - A file of the p.values for each variable pair
 
 iii) 'corr.pair.numbers.csv' - A file of the number of pairwise complete observations
+
+# Purchase Task Report
+
+This script uses Rmarkdown to produce a PDF report of the data processed
