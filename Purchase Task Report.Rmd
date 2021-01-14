@@ -413,41 +413,6 @@ delta <- 0.001
 
 ```
 
-```{r final.data, include=FALSE, error=TRUE}
-
-PT.W.index.final <- merge(purchase.task.df[c(1)],
-  PT.W.index[c("id","Q0d","K","R2","EV","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
-
-winso.names <- c("id","Q0d","K","R2","EV","Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")
-colnames(PT.W.index.final) <- winso.names
-
-# Includes Omax and Pmax demand curve values
-PT.nonW <- PT.results[c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")]
-non.winso.names <- c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")
-colnames(PT.nonW) <- non.winso.names
-
-PT.W.DATA <- merge(PT.W.index.final,PT.nonW, by = "id", all.x = TRUE)
-
-
-PT.describe <-
-  psych::describe(PT.W.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
-                            "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
-PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
-                      "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
-
-PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
-
-### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS
-price.stats <- psych::describe(PT.wide2[c(prices)])
-price.stats$vars <- purchase.task.names[-c(1)]
-price.stats <- price.stats[c("vars","n","mean","sd","se","min","max")]
-
-## Change column names for Appendix A:
-
-colnames(df.winsor.track) <- c("ID","Price","Before Winsorization","After Winsorization")
-
-```
-
 #### Date: `r format(Sys.time(), '%d %B, %Y')`
 
 #### Data File:
@@ -589,6 +554,40 @@ PT.W.index <- winsorize.index(PT.W.index,'Omax', delta)
 PT.W.index <- winsorize.index(PT.W.index,'Pmax', delta)
 ```
 
+```{r final.data, include=FALSE, error=TRUE}
+
+PT.W.index.final <- merge(purchase.task.df[c(1)],
+  PT.W.index[c("id","Q0d","K","R2","EV","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
+
+winso.names <- c("id","Q0d","K","R2","EV","Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")
+colnames(PT.W.index.final) <- winso.names
+
+# Includes Omax and Pmax demand curve values
+PT.nonW <- PT.results[c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")]
+non.winso.names <- c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")
+colnames(PT.nonW) <- non.winso.names
+
+PT.W.DATA <- merge(PT.W.index.final,PT.nonW, by = "id", all.x = TRUE)
+
+
+PT.describe <-
+  psych::describe(PT.W.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
+                            "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
+PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
+                      "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
+
+PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
+
+### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS
+price.stats <- psych::describe(PT.wide2[c(prices)])
+price.stats$vars <- purchase.task.names[-c(1)]
+price.stats <- price.stats[c("vars","n","mean","sd","se","min","max")]
+
+## Change column names for Appendix A:
+
+colnames(df.winsor.track) <- c("ID","Price","Before Winsorization","After Winsorization")
+
+```
 
 # Final Winsorized and Non-Winsorized Purchase Task Variable Descriptives
 
