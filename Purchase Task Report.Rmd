@@ -15,21 +15,22 @@ knitr::opts_chunk$set(error = TRUE, comment = "", results = 'asis')
 ###    REPORT WILL BE SAVED IN THIS LOCATION
 
 ### B) INPUT NAME OF .CSV FILE IN QUOTES
-pt.name <- "PT.MPT.csv" 
+pt.name <- "BETA.T1.csv" 
 
 ### C) SELECT only the "ID", AND the names of the purchase task variables you want to analyze
 ###    COPY AND PASTE NAMES OF ID + PURCHASE TASK VARIABLE NAMES HERE:
 
-purchase.task.names <- c("ID","mpt0","mpt1","mpt2","mpt4","mpt6",
-                         "mpt8","mpt10","mpt12","mpt14","mpt16","mpt18",
-                         "mpt20","mpt25","mpt30","mpt35","mpt40","mpt45",
-                         "mpt50","mpt55","mpt60")
+purchase.task.names <- c("ID","apt000","apt025","apt050","apt1","apt150",
+                  "apt2","apt250","apt3","apt4","apt5","apt6",
+                  "apt7","apt8","apt9","apt10","apt11","apt12",
+                  "apt13","apt14","apt15","apt16","apt18","apt20",	
+                  "apt22","apt24","apt26","apt28","apt30","apt35","apt40")
 
 ### D) SELECT TYPE OF PURCHASE TASK: "APT", "CPT", OR "MPT"
-pt.task <- "MPT"
+pt.task <- "APT"
 
 ### E) CHANGE to = total N participants in data set
-tot.part <- 500
+tot.part <- 730
 
 ##### ----------  OPTIONAL CHANGES:
 ###############################################################################################
@@ -43,19 +44,25 @@ wins.type <- 'preserve_order'
 ###############################################################################################
 ```
 
+
+
 ``` {r, include=FALSE, error=TRUE}
 library(dplyr)
 library(psych)
 library(writexl)
 library(beezdemand)
 
+#################################################################################################
 ##### STEP '0': DATA INPUT AND FORMATTING PRIOR TO CLEANING AND PROCESSING
 #################################################################################################
+library(dplyr)
+library(psych)
+library(beezdemand)
 
-purchase.task.df <- read.csv(pt.name) 
+purchase.task.df <- read.csv(pt.name)
 purchase.task.df <- purchase.task.df[c(purchase.task.names)]
 
-# RENAME the columns in the data frame to "id" (required), plus the price of each purchase task item
+# RENAMES the columns in the data frame to "id" (required), plus the price of each purchase task item
 apt.item.names <- c("id","0","0.25","0.50","1","1.50","2","2.50","3","4","5","6","7","8","9",
                     "10","11","12","13","14","15","16","18","20","22","24","26","28","30","35","40")
 cpt.item.names <- c("id","0","0.05","0.10","0.15","0.20","0.25","0.30","0.35","0.40","0.45",
@@ -83,16 +90,16 @@ if(pt.task=="APT"){
 # CREATES a list of prices of each purchase task item
 prices <- purchase.task.items
 
-##### STEP 1: IMPUTE ALL PERTINENT ZEROS
 #################################################################################################
+##### STEP 1: IMPUTE ALL PERTINENT ZEROS
+
 for (id_num in purchase.task.df$id){
   if (purchase.task.df[purchase.task.df[,"id"]==id_num,][max(which(!is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])))] == 0){
     purchase.task.df[purchase.task.df[,"id"]==id_num,][is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])] <- 0
   }
 }
 
-# CREATE 2nd data frame when running a for loop
-purchase.task.df.max <- purchase.task.df
+###############################################################################################
 
 ### CHANGE AS NEEDED FOR APT / CPT
 # 99 maximum
@@ -107,25 +114,21 @@ if(pt.task=="MPT") {
   purchase.task.df[,2:ncol(purchase.task.df)][purchase.task.df[,2:ncol(purchase.task.df)] > 28] <- 28
 }
 
-## RE-ASSIGN VALUES TO the purchase.task.df after processed in the for-loop
-purchase.task.df <- purchase.task.df.max
-
-
-##### STEP 2: REVIEW MISSING DATA
 #################################################################################################
+##### STEP 2: REVIEW MISSING DATA
 
 missing.id <- {}
 for (id_num in purchase.task.df$id){
   if (sum(is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])) > 0){
-    cat('ID # ',id_num,' has missing data. \n')
     missing.id <- append(missing.id, id_num)
   }
 }
 
+# REMOVES the ids with missing data (as identified in missing.id)
 purchase.task.df2 <- purchase.task.df[!purchase.task.df[,"id"] %in% missing.id,]
 
-##### STEPS 3 & 4: VIOLATION OF TREND AND BOUNCE RATIO CRITERION
 #################################################################################################
+##### STEPS 3 & 4: VIOLATION OF TREND AND BOUNCE RATIO CRITERION
 
 remove.id.trend = {}
 for (id_num in purchase.task.df2$id){
@@ -136,7 +139,6 @@ for (id_num in purchase.task.df2$id){
   }
 }
 
-# CALCULATES Bounce Ratio / IDENTIFIES & REMOVES participants with a bounce ratio => 10%
 remove.id.bounce <- {}
 for (id_num in purchase.task.df2$id){
   num.bounces <- 0
@@ -148,7 +150,7 @@ for (id_num in purchase.task.df2$id){
   if (num.bounces/(length(prices)-1) > 0.1){
     purchase.task.df2 <- purchase.task.df2[!purchase.task.df2[,"id"] %in% c(id_num),]
     remove.id.bounce <- append(remove.id.bounce,id_num)
-    cat("ID # ",id_num,"has bounce ratio:", num.bounces/(length(prices)-1),"and is being removed.\n")
+    cat("ID",id_num,"has bounce ratio:", num.bounces/(length(prices)-1),"and is being removed.\n")
   }
 }
 
@@ -173,8 +175,13 @@ fail.list <- check.unsys$ReversalsPass=="Fail"
 
 check.unsys[fail.list,]
 
+# LISTS the participants who failed and
+# KEEPS the participants who passed
 good.id.list <- check.unsys$id[!fail.list]
 PT.long2 <- PT.long[!is.na(match(PT.long$id,good.id.list)),]
+
+#################################################################################################
+##### STEP 5: OUTLIER MANAGEMENT AT THE PRICE LEVEL
 
 # RESHAPE the data back from long to wide format to winsorize the data
 PT.wide <- reshape(as.data.frame(PT.long2), idvar = "id", v.names = "y", timevar = "x", direction = "wide")
@@ -192,7 +199,7 @@ wide.zs <- scale(PT.wide, center = TRUE, scale = TRUE)
 
 PT.wide2 <- PT.wide
 
-##### WINSORIZING TYPE - OPTION 1 #####
+##### ----------  WINSORIZING TYPE - OPTION 1:
 #################################################################################################
 # 1: For each price we replace values with sd over 3.99 with their corresponding 3.99 regular value rounded up
 if (wins.type=="1_higher_sd"){
@@ -205,7 +212,7 @@ if (wins.type=="1_higher_sd"){
   }
 }
 
-##### WINSORIZING TYPE - OPTION 2 #####
+##### ----------  WINSORIZING TYPE - OPTION 2:
 #################################################################################################
 # 2: All outliers with 1 higher than highest non-outlying value are replaced
 # (or in the case of below -3.99: 1 lower than lowest)
@@ -216,7 +223,7 @@ if (wins.type=="1_higher_max_non_outlier"){
   }
 }
 
-##### WINSORIZING TYPE - OPTION 3 #####
+##### ----------  WINSORIZING TYPE - OPTION 3:
 #################################################################################################
 # 3: Preserve order
 if (wins.type=="preserve_order"){
@@ -266,8 +273,7 @@ for (id_num in PT.wide$id){
   }
 }
 
-##### RESHAPE winsorized data from wide format to long
-# !  # "W" in dataframe stands for winsorized data
+##### ----- WINSORIZED
 PT.W.long <- reshape(as.data.frame(PT.wide2), idvar = "id", 
                      varying = purchase.task.items,
                      v.names = c("y"), timevar = c("x"), sep = "", direction = "long")
@@ -277,12 +283,17 @@ PT.W.long2 <- PT.W.long[order(PT.W.long$id),]
 # Reassigning x values in the long format using "prices" object
 PT.W.long2$x <- prices
 
-##### STEP 6: ELASTICITY MODELLING TESTS
-#################################################################################################
+##### ----- NON-WINSORIZED
+#  USE PREVIOUS PT.long2 DF
+PT.nonW.long2 <- PT.long2
 
+#################################################################################################
+##### STEP 6: ELASTICITY MODELLING TESTS
+
+##### ----- WINSORIZED
 PT.emp <- GetEmpirical(dat = PT.W.long2)
 colnames(PT.emp) <- c("id","Intensity","BP0","BP1","Omax","Pmax")
-# DETERMINE which k-value is best for curve fitting by testing k = 2, 3, and 4
+# DETERMINE which k-value is best for curve fitting by testing a series of values
 R2.val.k <- {}
 
 # K-values to test are chosen by the researcher at the top of this script in the item 'k.span'
@@ -293,7 +304,7 @@ for (k_value in k.span){
 }
 
 # CHOOSE k-value based on which R2 is highest for the mean data
-# ! # Ties are broken by choosing the lower k-value
+# !!! # Ties are broken by choosing the lower k-value
 k.value.final <- min(k.span[R2.val.k == max(R2.val.k)] )
 print(k.value.final)
 
@@ -303,6 +314,7 @@ mean.curve <- FitCurves(dat = PT.W.long2, equation = "koff",
 mean.curve$id <- c('mean.curve')
 mean.curve.final <- mean.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
 colnames(mean.curve.final) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
+print(mean.curve.final)
 
 part.curve <- FitCurves(dat = PT.W.long2, equation = "koff", 
                         k = k.value.final, agg=NULL)
@@ -348,11 +360,88 @@ for (id_num in one.rev.list){
   }
 }
 
+
 PT.results <- merge(PT.wide2, PT.final.results)
 item.names <- c("id",prices,"Q0d", "K", "Alpha", "R2", "EV", "Omax_curve",
                 "Pmax_curve","Intensity", "BP0", "BP1", "Omax", "Pmax", "Breakpoint")
 colnames(PT.results) <- item.names
 
+##### ----- NON-WINSORIZED
+PT.nonW.emp <- GetEmpirical(dat = PT.nonW.long2)
+colnames(PT.nonW.emp) <- c("id","Intensity","BP0","BP1","Omax","Pmax")
+# DETERMINE which k-value is best for curve fitting by testing a series of values
+nonW.R2.val.k <- {}
+
+# K-values to test are chosen by the researcher at the top of this script in the item 'k.span'
+for (k_value in k.span){
+  nonW.mean.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff", 
+                          k = k_value, agg='Mean')
+  nonW.R2.val.k <- append(nonW.R2.val.k, nonW.mean.curve$R2)
+}
+
+# CHOOSE k-value based on which R2 is highest for the mean data
+# !!! # Ties are broken by choosing the lower k-value
+nonW.k.value.final <- min(k.span[nonW.R2.val.k == max(nonW.R2.val.k)] )
+print(nonW.k.value.final)
+
+nonW.mean.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff", 
+                        k = nonW.k.value.final, agg='Mean')
+
+nonW.mean.curve$id <- c('nonW.mean.curve')
+nonW.mean.curve.final <- nonW.mean.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
+colnames(nonW.mean.curve.final) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
+print(nonW.mean.curve.final)
+
+nonW.part.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff", 
+                        k = nonW.k.value.final, agg=NULL)
+
+nonW.spec.curve <- nonW.part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
+colnames(nonW.spec.curve) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
+
+nonW.all.out <- merge(PT.nonW.emp,nonW.spec.curve)
+nonW.all.out$id <- as.integer(nonW.all.out$id)
+nonW.all.out <- nonW.all.out[order(nonW.all.out$id),]
+nonW.all.out$id <- as.character(nonW.all.out$id)
+
+PT.nonW.final.results <- bind_rows(nonW.mean.curve.final,nonW.all.out)
+
+# CREATE proper breakpoint variable
+# PT.wide = non-winsorized
+PT.nonW.final.results$Breakpoint <- PT.nonW.final.results$BP0
+for (id_num in PT.wide$id){
+  pt.nonW.sum <- sum(PT.wide[PT.wide$id==id_num,prices], na.rm = FALSE)
+  nonW.last.amount <- PT.wide[PT.wide$id==id_num,length(prices)+1]
+  if(is.na(PT.nonW.final.results$BP0[PT.nonW.final.results$id==id_num]) & (pt.nonW.sum==0)){
+    PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- 0
+  } else if (is.na(PT.nonW.final.results$BP0[PT.nonW.final.results$id==id_num]) & (nonW.last.amount>0)){
+    PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- as.numeric(prices)[length(prices)]+1
+  }
+}
+
+# REDEFINE breakpoints where there were reversals to 1st 0 consumption reached
+nonW.check.unsys.2 <- CheckUnsystematic(dat = PT.long, deltaq = -0.01, bounce = 0.1, reversals = .01, ncons0 = 1)
+nonW.one.rev.list <- nonW.check.unsys.2[nonW.check.unsys.2$ReversalsPass=="Fail",]$id
+nonW.one.rev.list <- nonW.one.rev.list[nonW.one.rev.list %in% PT.wide$id]
+for (id_num in one.rev.list){
+  str(PT.nonW.final.results[PT.nonW.final.results$id==id_num,]$Breakpoint)
+  nonW.cons.vals <- PT.wide[PT.wide$id==id_num,]
+  for (price in prices){
+    if (nonW.cons.vals[,price]==0){
+      cat('The breakpoint for ID',id_num,'has been changed from',
+          PT.nonW.final.results[PT.nonW.final.results$id==id_num,]$Breakpoint,'to',as.numeric(price))
+      PT.nonW.final.results[PT.nonW.final.results$id==id_num,]$Breakpoint <- as.numeric(price)
+      break
+    }
+  }
+}
+
+PT.nonW.results <- merge(PT.wide, PT.nonW.final.results)
+item.names <- c("id",prices,"Q0d", "K", "Alpha", "R2", "EV", "Omax_curve",
+                "Pmax_curve","Intensity", "BP0", "BP1", "Omax", "Pmax", "Breakpoint")
+colnames(PT.nonW.results) <- item.names
+
+#################################################################################################
+##### STEP 7: WINSORIZING INDEX VARIABLES (ALPHA, PMAX, ETC.)
 # CREATES a FUNCTION for winsorizing index variables
 winsorize.index <- function(all_out_temp,var_name,delta) {
   all_out <- all_out_temp[!is.na(all_out_temp[,c(var_name)]),]
@@ -369,8 +458,9 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(above_399)>0){
       q <- 1
       for (ab_399 in sort(above_399)){
-        #print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
-     cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),' the ',var_name,' value was changed from ',ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
+       # print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
+        cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),' the ',var_name,' value was changed from ',
+            ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
         q <- q + 1
       }
@@ -378,8 +468,9 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(below_neg399)>0){
       for (bel_399 in sort(below_neg399,decreasing = TRUE)){
         q <- 1
-        #print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
-       cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],' the ',var_name,' value was changed from',bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta, '\n')
+       # print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
+        cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],' the ',var_name,' value was changed from',
+            bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == bel_399] <- min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta
         q <- q + 1
       }
@@ -390,10 +481,17 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
   all_out_temp
 }
 
+
+##### ----- WINSORIZED
 PT.W.index <- PT.results
 
+# CALCULATING Elasticity (curve data) requires the first 2 numbers to be non-zero
 temp_ind <- (PT.W.index[,2]==0)|(PT.W.index[,3]==0)
 temp_ind_both_0 <- (PT.W.index[,2]==0)&(PT.W.index[,3]==0)
+
+
+##### ----- NON-WINSORIZED
+PT.nonW.index <- PT.nonW.results
 
 # REMOVE participants from the curve analysis who had a 0 in one of their first 2 responses
 two.responses.zero <- NULL
@@ -409,9 +507,12 @@ one.response.zero <- capture.output(cat(PT.W.index[(temp_ind)&(!temp_ind_both_0)
 if(length(PT.W.index[temp_ind])>0) {
   PT.W.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
 }
-delta <- 0.001
 
+if(length(PT.nonW.index[temp_ind])>0) {
+  PT.nonW.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+}
 ```
+
 
 #### Date: `r format(Sys.time(), '%d %B, %Y')`
 
@@ -482,7 +583,20 @@ cat(nrow(df.winsor.track),' outlying values (',
     100*nrow(df.winsor.track)/(nrow(PT.W.index)*length(prices)),'% of total values)\n',sep='')
 ```
 
-# Model Fitting
+# Elasticity Modelling Tests:
+
+#### ID's with 1 zero value in the first 2 responses:
+```{r elasticity, echo=FALSE}
+cat(one.response.zero)
+```
+
+#### ID's with the first 2 responses equalling zero:
+``` {r elasticity2, echo=FALSE}
+cat(two.responses.zero)
+```
+
+
+# Model Fitting (Winsorized)
 
 #### K values tested
 ```{r model.fitting, echo=FALSE}
@@ -519,10 +633,16 @@ cat(min(PT.W.index$R2,na.rm=TRUE))
 cat(max(PT.W.index$R2,na.rm=TRUE))
 ```
 
-# Mean Curve
+# Mean Curve:
 
+#### Winsorized:
 ``` {r mean.curve, echo=FALSE, results='markup'}
 knitr::kable(mean.curve.final[c(-1)])
+```
+
+#### Non-Winsorized:
+``` {r mean.curve.nonW, echo=FALSE, results='markup'}
+knitr::kable(nonW.mean.curve.final[c(-1)])
 ```
 
 # Price-Level Winsorizing of Outlying values:
@@ -532,21 +652,11 @@ knitr::kable(mean.curve.final[c(-1)])
 cat(breakpoint.change)
 ```
 
-# Elasticity Modelling Tests:
-
-#### ID's with 1 zero value in the first 2 responses:
-```{r elasticity, echo=FALSE}
-cat(one.response.zero)
-```
-
-#### ID's with the first 2 responses equalling zero:
-``` {r elasticity2, echo=FALSE}
-cat(two.responses.zero)
-```
-
 # Index-Level Winsorizing of Outlying values:
 
 ```{r index.level, echo=FALSE, results='markup'}
+
+delta <- 0.001
 PT.W.index <- winsorize.index(PT.W.index,'Alpha', delta)
 PT.W.index <- winsorize.index(PT.W.index,'Breakpoint', delta)
 PT.W.index <- winsorize.index(PT.W.index, 'Intensity', delta)
@@ -556,32 +666,38 @@ PT.W.index <- winsorize.index(PT.W.index,'Pmax', delta)
 
 ```{r final.data, include=FALSE, error=TRUE}
 
+# This merges the output with N = tot.part so that any participants that were 
+# removed for the purchase task have NAs in the purchase task output
 PT.W.index.final <- merge(purchase.task.df[c(1)],
-  PT.W.index[c("id","Q0d","K","R2","EV","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
+  PT.W.index[c("id","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
 
-winso.names <- c("id","Q0d","K","R2","EV","Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")
+winso.names <- c("id","Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")
 colnames(PT.W.index.final) <- winso.names
 
 # Includes Omax and Pmax demand curve values
-PT.nonW <- PT.results[c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")]
-non.winso.names <- c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")
-colnames(PT.nonW) <- non.winso.names
+PT.nonW <- PT.nonW.index[c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","Intensity","Omax","Pmax")]
 
-PT.W.DATA <- merge(PT.W.index.final,PT.nonW, by = "id", all.x = TRUE)
+PT.ALL.DATA <- merge(PT.nonW,PT.W.index.final, by = "id", all.x = TRUE)
 
-
+### INDEX LEVEL VARIABLES DESCRIPTIVE STATISTICS
 PT.describe <-
-  psych::describe(PT.W.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
+  psych::describe(PT.ALL.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
                             "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
 PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
                       "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
 
 PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
 
-### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS
+### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (WINSORIZED)
 price.stats <- psych::describe(PT.wide2[c(prices)])
 price.stats$vars <- purchase.task.names[-c(1)]
 price.stats <- price.stats[c("vars","n","mean","sd","se","min","max")]
+
+
+### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (WINSORIZED)
+nonW.price.stats <- psych::describe(PT.wide[c(prices)])
+nonW.price.stats$vars <- purchase.task.names[-c(1)]
+nonW.price.stats <- nonW.price.stats[c("vars","n","mean","sd","se","min","max")]
 
 ## Change column names for Appendix A:
 
@@ -589,22 +705,27 @@ colnames(df.winsor.track) <- c("ID","Price","Before Winsorization","After Winsor
 
 ```
 
-# Final Winsorized and Non-Winsorized Purchase Task Variable Descriptives
+# Final Winsorized & Non-Winsorized Purchase Task Variable Descriptives
 
 Winsorized variables are denoted by "_W"
 
 ```{r pt.descriptives, echo=FALSE, results='markup'}
-knitr::kable(PT.describe, digits = 2, row.names = F)
+knitr::kable(PT.describe, digits = 4, row.names = F)
 ```
 
-# Price Level Descriptives
+# Price Level Descriptives (Winsorized)
 ```{r price.level.descriptives, echo=FALSE, results='markup'}
 knitr::kable(price.stats, digits = 2, row.names = F)
 ```
+
+# Price Level Descriptives (Non-Winsorized)
+```{r price.level.descriptives.nonW, echo=FALSE, results='markup'}
+knitr::kable(nonW.price.stats, digits = 2, row.names = F)
+```
+
 
 # Appendix A: Outlier changes by ID
 
 ```{r appendixA, echo=FALSE, results='markup'}
 knitr::kable(df.winsor.track)
 ```
-
