@@ -10,11 +10,15 @@ setwd("~/Desktop/PBCAR")   ### CHANGE FILE DIRECTORY
 
 # b) CHANGE THE NAME OF THE FILE (MUST BE A .csv file)
 
-heatmap.name <- "PBCAR.APT.csv"
+heatmap.name <- "DATA.csv"
 
 # c) SELECT only the names of the variables you want to analyze
 
-heatmap.items <- c("Alpha","Intensity","Omax_w","Pmax_w","Breakpoint")
+heatmap.items <- c("Alpha_t1","Intensity_t1","Omax_w_t1","Pmax_w_t1","Breakpoint_t1")
+
+# d) TITLE for the heatmap (leave as "" to omit a title)
+
+hmap.title <- "Heatmap Title"
 
 ##### ----------  OPTIONAL CHANGES:
 #################################################################################################
@@ -45,14 +49,13 @@ library(Hmisc)
 heatmap.df <- read.csv(heatmap.name)
 
 # SELECTS only the variables to be analyzed
-
 hmap.df <- heatmap.df[c(heatmap.items)]
-
-# ASSIGNS the new item order to the new data frame
-hmap.df <- heatmap.df[,item.reorder]
 
 # ASSIGNS the new names to the data frame
 colnames(hmap.df) <- item.rename
+
+# ASSIGNS the new item order to the new data frame
+hmap.df <- hmap.df[item.reorder]
 #################################################################################################
 ##### STEP 1: CREATION OF THE CORRELATION MATRIX
 #################################################################################################
@@ -85,12 +88,8 @@ heatmap.plot <- ggplot(data = melted.corr.matrix, aes(Var2, Var1, fill = value))
   scale_fill_gradient2(low = "midnightblue", high = "maroon4", mid = "grey90", 
                        midpoint = 0, limit = c(-1,1), space = "Lab", 
                        name="Pearson\nCorrelation") +
-  theme_minimal()+ 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 12, hjust = 1),
-        axis.text.y = element_text(angle = 0, vjust = .5, 
-                                   size = 12, hjust = 0)) +
   scale_y_discrete(position = "right") +
+  theme_minimal() +
   coord_fixed()
 
 ### ADD correlation coefficients to the heat map
@@ -103,9 +102,14 @@ heatmap.plot <- ggplot(data = melted.corr.matrix, aes(Var2, Var1, fill = value))
     panel.border = element_blank(),
     panel.background = element_blank(),
     axis.ticks = element_blank(),
-    legend.justification = c(1, 0),
+    legend.justification = c(2, 0),
     legend.position = c(0.5, 0.7),
-    legend.direction = "horizontal")+
+    legend.direction = "horizontal",
+    legend.title = element_text(size = 12, vjust = 2),
+    axis.text.x = element_text(face = "bold", angle = 30,size = 10),
+    axis.text.y = element_text(face = "bold", size = 10),
+    axis.title = element_text(size = 30, face = "bold", vjust = -2)) +
+    labs(title = hmap.title) +
   guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
                                title.position = "top", title.hjust = 0.5)))
 
@@ -122,13 +126,12 @@ get.upper.tri <- function(corr.p.values){
 upper.tri <- get.upper.tri(corr.p.values)
 melted.corr.pval <- as.data.frame(melt(upper.tri, na.rm = TRUE))
 
-melted.corr.pval$pval <- ifelse(melted.corr.pval$value<0.001,"p < 0.001",
+(melted.corr.pval$pval <- ifelse(melted.corr.pval$value<0.001,"p < 0.001",
                                 ifelse(melted.corr.pval$value>0.001 &
                                          melted.corr.pval$value<0.01,"p < 0.01",
                                        ifelse(melted.corr.pval$value>0.01 &
-                                                melted.corr.pval$value<0.05,"p < 0.05","Not Sign.")))
+                                                melted.corr.pval$value<0.05,"p < 0.05","Not Sign."))))
 
-melted.corr.pval
 
 ### OPTIONAL WRITE A .csv file with p-values of significance
 write.csv(melted.corr.pval,"heatmap.pvalues.csv")
