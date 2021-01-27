@@ -27,6 +27,8 @@ hmap.title <- "Heatmap Title"
 item.rename <- c("Alpha", "Intensity","Omax","Pmax","Breakpoint")
 
 # SELECT and REORDER the variables for the heatmap
+# ----- In order from left-to-right for x axis & bottom-to-top for y axis
+
 item.reorder <- c("Alpha","Breakpoint","Intensity","Omax","Pmax")
 
 # DENOTES the number of decimal points the correlation matrix is rounded to
