@@ -39,7 +39,7 @@ iv) "Appendix A.csv" - This provides a table of all the outlying values that wer
 
 # Heat Map Template
 
-This heatmap script utilizes 'pairwise complete' observations, meaning only individuals with missing data for the 2 variables being compared will be removed.
+This heatmap script utilizes 'pairwise complete' observations, meaning only individuals with missing data for the 2 variables being compared will be removed. User imput required at the beginning of the script only. See [example](https://github.com/PBCAR/Visualizations/blob/main/Examples/heatmap.png).
 
 ### Packages:
 
