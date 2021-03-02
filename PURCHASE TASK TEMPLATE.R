@@ -5,10 +5,10 @@
 ##### ----------  REQUIRED CHANGES BY USER:
 #################################################################################################
 ### a) CHANGE file directory - GO TO: SESSION > SET WORKING DIRECTORY > CHOOSE DIRECTORY
-setwd("~/Desktop/")
+setwd("~/Desktop/PBCAR/PATH CANN/PATH CANN APT/Purchase Task Data/")
 
 ### b) NAME of .CSV file:
-pt.name <- "BETA.T5.csv"
+pt.name <- "PATH CANN W1.csv"
 
 ### c) SELECT TYPE of purchase task: APT, CPT, OR MPT:
 pt.task <- "APT"
@@ -566,9 +566,7 @@ PT.W.index[(temp_ind) &(!temp_ind_both_0),]$id
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
-if(length(PT.W.index[temp_ind])>0) {
-  PT.W.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
-}
+PT.W.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
 
 # ^^^ When no participants have a 0 response for the first two purchase task items,
 # an error message is produced: Error in value[[jvseq[[jjj]]]] : subscript out of bounds
@@ -615,9 +613,7 @@ PT.nonW.index[(nonW.temp_ind) &(!nonW.temp_ind_both_0),]$id
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
-if(length(PT.nonW.index[nonW.temp_ind])>0) {
-  PT.nonW.index[nonW.temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
-}
+PT.nonW.index[nonW.temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
 
 
 ################  ----------  OUTPUT FOR PURCHASE TASK REPORTS  ----------  #####################
@@ -665,6 +661,7 @@ PT.describe <-
                             "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
 PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
                       "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
+
 
 PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
 ### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (WINSORIZED)
