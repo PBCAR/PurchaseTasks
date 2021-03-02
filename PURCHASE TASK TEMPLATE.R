@@ -5,15 +5,15 @@
 ##### ----------  REQUIRED CHANGES BY USER:
 #################################################################################################
 ### a) CHANGE file directory - GO TO: SESSION > SET WORKING DIRECTORY > CHOOSE DIRECTORY
-setwd("~/Desktop/PBCAR/PATH CANN/PATH CANN APT/Purchase Task Data/")
+#setwd("~/Desktop/")
 
 ### b) NAME of .CSV file:
-pt.name <- "PATH CANN W1.csv"
+pt.name <- "BETA.TEST.csv"
 
 ### c) SELECT TYPE of purchase task: APT, CPT, OR MPT:
 pt.task <- "APT"
 
-# d) COPY AND PASTE names of ID + Purchase Task variable names here:
+### d) COPY AND PASTE names of ID + Purchase Task variable names here:
 purchase.task.names <- c("ID","apt000","apt025","apt050","apt1","apt150",
                          "apt2","apt250","apt3","apt4","apt5","apt6",
                          "apt7","apt8","apt9","apt10","apt11","apt12",
@@ -21,7 +21,7 @@ purchase.task.names <- c("ID","apt000","apt025","apt050","apt1","apt150",
                          "apt22","apt24","apt26","apt28","apt30","apt35","apt40")
 
 ### e) CHANGE to = total N participants in data set
-tot.part <- 603
+tot.part <- 606
 
 ##### ----------  OPTIONAL CHANGES:
 #################################################################################################
@@ -78,8 +78,10 @@ prices <- purchase.task.items
 # The BETA purchase tasks use branching logic such that no further prices are presented
 # after a zero response is given within a four-price array. (The task does not immediately
 # stop to avoid revealing the contingency.) The first step is to impute all pertinent zeros.
+
 #################################################################################################
-# CHANGES NAs to 0 IF the last non-missing value was 0
+##### ----- CHANGES NAs to 0 IF the last non-missing value was 0:
+
 for (id_num in purchase.task.df$id){
   if (purchase.task.df[purchase.task.df[,"id"]==id_num,][max(which(!is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])))] == 0){
     purchase.task.df[purchase.task.df[,"id"]==id_num,][is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])] <- 0
@@ -87,16 +89,16 @@ for (id_num in purchase.task.df$id){
 }
 
 ###############################################################################################
-
 ### CHANGE AS NEEDED FOR APT / CPT
-# 99 maximum
+# 99 drink maximum
+
 if(pt.task=="CPT" | pt.task=="APT") {
   purchase.task.df[,2:ncol(purchase.task.df)][purchase.task.df[,2:ncol(purchase.task.df)] > 99] <- 99
 }
 
 ### CHANGE AS NEEDED FOR MPT
-# if your values were allowed to be higher than 28 grams of cannabis,
-# and you want to cap these values at the 28 maximum
+# 28 grams of cannabis maximum
+
 if(pt.task=="MPT") {
   purchase.task.df[,2:ncol(purchase.task.df)][purchase.task.df[,2:ncol(purchase.task.df)] > 28] <- 28
 }
@@ -104,12 +106,12 @@ if(pt.task=="MPT") {
 #################################################################################################
 ##### STEP 2: REVIEW MISSING DATA
 #################################################################################################
-# Missing data are reviewed next. Participants who contradict themselves at the last item
+# Missing data are reviewed next. Participants who contradict themselves at the last item of
 # the array are considered missing. (A valid imputation is not possible because it is not
 # clear whether all subsequent responses would be zeros.)  
 #################################################################################################
-# NA data can still exist (ex. if the last non-missing value did not equal 0). 
-# IDENTIFIES participants with NAs (by id):
+###### ----- IDENTIFIES participants with NAs (by id):
+
 missing.id <- {}
 for (id_num in purchase.task.df$id){
   if (sum(is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])) > 0){
@@ -118,6 +120,7 @@ for (id_num in purchase.task.df$id){
 }
 
 print(missing.id)
+
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
@@ -127,19 +130,15 @@ purchase.task.df2 <- purchase.task.df[!purchase.task.df[,"id"] %in% missing.id,]
 #################################################################################################
 ##### STEPS 3 & 4: VIOLATION OF TREND AND BOUNCE RATIO CRITERION
 #################################################################################################
-# Participants with 0 demand are deemed acceptable, although participants who
-# endorsed some level of consumption followed by invariant response were considered
-# unacceptable (trend violation).
-
 # Data quality/attention/effort is reviewed next, excluding individuals who:
-# i) exhibit a bounce ratio of 10%  #(or other chosen ratio)
-# ii) do not exhibit a decelerating trend, or
-# iii)  exhibit 2 or more reversals (only flagging for a reversal if they have 2 or more consecutive 0s prior to a positive value).
+# i) exhibit a bounce ratio of 10%  (or other chosen ratio)
+# ii) do not exhibit a decelerating trend (trend violation - 0 demand is acceptable)
+# iii)  exhibit 2 or more reversals (if there are 2 or more consecutive 0s prior to a positive value).
 #################################################################################################
 
-# CHECKS for trend violation where first value does not start with 0
-# IDENTIFIES which ids are being removed and why
-# REMOVES participants with a trend violation
+##### ----- CHECKS for trend violation where first value does not start with 0:
+##### ----- IDENTIFIES which ids and REMOVES participants with a trend violation:
+
 remove.id.trend = {}
 for (id_num in purchase.task.df2$id){
   if ( (purchase.task.df2[purchase.task.df2$id == id_num,prices[1]]>0) & 
@@ -150,12 +149,13 @@ for (id_num in purchase.task.df2$id){
 }
 
 print(remove.id.trend)
+
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
-# CALCULATES Bounce Ratio
-# IDENTIFIES participants with a Bounce Criterion of 0.1
-# REMOVES participants with a bounce ratio => 10%
+##### ----- CALCULATES Bounce Ratio:
+##### ----- IDENTIFIES and REMOVES participants with a Bounce Criterion of 0.1:
+
 remove.id.bounce <- {}
 for (id_num in purchase.task.df2$id){
   num.bounces <- 0
@@ -174,8 +174,9 @@ for (id_num in purchase.task.df2$id){
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
-##### RESHAPE data from wide to long to CHECK for reversals
-##### The 'beezdemand' package requires column names to = "id", "x", "y"
+# RESHAPE data from wide to long to CHECK for reversals
+# The 'beezdemand' package requires column names to = "id", "x", "y"
+
 PT.long <- reshape(as.data.frame(purchase.task.df2), idvar = "id", 
                    varying = purchase.task.items,
                    v.names = c("y"), timevar = c("x"), sep = "", direction = "long")
@@ -186,8 +187,9 @@ PT.long <- PT.long[order(PT.long$id),]
 PT.long$x <- prices
 
 #################################################################################################
-# CHECK for reversals (with anyone flagged if they have a number of reversals greater than 1.5)
-# DO NOT CHANGE 'deltaq = -0.01, bounce = bounce_crit,' since these have been set up not to flag anyone new.
+##### ----- CHECKS FOR REVERSALS:
+
+# DO NOT CHANGE 'deltaq = -0.01, bounce = bounce_crit,' since these have been set up not to flag anyone new
 # ncons0 = the number of consecutive 0s prior to a positive value that is used to flag a reversal
 
 check.unsys <- CheckUnsystematic(dat = PT.long, deltaq = -0.01, bounce = bounce.crit, 
@@ -200,8 +202,7 @@ fail.list <- check.unsys$ReversalsPass=="Fail"
 
 check.unsys[fail.list,]
 
-# LISTS the participants who failed and
-# KEEPS the participants who passed
+# LISTS the participants who failed and KEEPS the participants who passed
 good.id.list <- check.unsys$id[!fail.list]
 PT.long2 <- PT.long[!is.na(match(PT.long$id,good.id.list)),]
 
@@ -238,6 +239,7 @@ PT.wide2 <- PT.wide
 ##### ----------  WINSORIZING TYPE - OPTION 1:
 #################################################################################################
 # 1: For each price we replace values with sd over 3.99 with their corresponding 3.99 regular value rounded up
+
 if (wins.type=="1_higher_sd"){
   for (price in prices){
     PT.wide2[wide.zs[,price]> 3.99,price] <- ceiling(3.99*sd(PT.wide2[,price])+
@@ -252,6 +254,7 @@ if (wins.type=="1_higher_sd"){
 #################################################################################################
 # 2: All outliers with 1 higher than highest non-outlying value are replaced
 # (or in the case of below -3.99: 1 lower than lowest)
+
 if (wins.type=="1_higher_max_non_outlier"){
   for (price in prices){
     PT.wide2[wide.zs[,price]> 3.99,price] <- max(PT.wide2[wide.zs[,price]< 3.99,price]) + 1
@@ -262,6 +265,7 @@ if (wins.type=="1_higher_max_non_outlier"){
 ##### ----------  WINSORIZING TYPE - OPTION 3:
 #################################################################################################
 # 3: Preserve order
+
 if (wins.type=="preserve_order"){
   for (price in prices){
     above.399 <- unique(wide.zs[wide.zs[,price]> 3.99,price])
@@ -313,6 +317,7 @@ for (id_num in PT.wide$id){
 #################################################################################################
 ##### RESHAPE winsorized data from wide format to long
 # !  # "W" in dataframe stands for winsorized data
+
 PT.W.long <- reshape(as.data.frame(PT.wide2), idvar = "id", 
                      varying = purchase.task.items,
                      v.names = c("y"), timevar = c("x"), sep = "", direction = "long")
@@ -325,10 +330,11 @@ PT.W.long2$x <- prices
 ##### ----- NON-WINSORIZED
 #################################################################################################
 #  USE PREVIOUS PT.long2 DF
+
 PT.nonW.long2 <- PT.long2
 
 #################################################################################################
-##### STEP 6: ELASTICITY MODELLING TESTS
+##### STEP 6: ELASTICITY (ALPHA) MODELLING TESTS
 #################################################################################################
 # Elasticity modelling tests k = 2,3,4 in the mean data using the exponentiated equation
 # and uses the parameter that yields the best fit. Participants who have one positive
@@ -514,7 +520,6 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(above_399)>0){
       q <- 1
       for (ab_399 in sort(above_399)){
-       # print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
         cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),' the ',var_name,' value was changed from ',
             ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
@@ -524,7 +529,6 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(below_neg399)>0){
       for (bel_399 in sort(below_neg399,decreasing = TRUE)){
         q <- 1
-       # print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
         cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],' the ',var_name,' value was changed from',
             bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == bel_399] <- min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta
@@ -538,8 +542,6 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
 }
 
 
-
-
 ##### ----- WINSORIZED
 #################################################################################################
 #################################################################################################
@@ -547,7 +549,7 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
 ### WINSORIZED
 PT.W.index <- PT.results
 
-# CALCULATING Elasticity (curve data) requires the first 2 numbers to be non-zero
+##### ----- CALCULATING Elasticity (curve data) requires the first 2 numbers to be non-zero:
 temp_ind <- (PT.W.index[,2]==0)|(PT.W.index[,3]==0)
 temp_ind_both_0 <- (PT.W.index[,2]==0)&(PT.W.index[,3]==0)
 
@@ -566,10 +568,13 @@ PT.W.index[(temp_ind) &(!temp_ind_both_0),]$id
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
-PT.W.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+### IDs with ZEROS in first 2 responses:
 
-# ^^^ When no participants have a 0 response for the first two purchase task items,
-# an error message is produced: Error in value[[jvseq[[jjj]]]] : subscript out of bounds
+zero.id.W <- PT.W.index[temp_ind,]$id
+
+if(length(zero.id.W>0)){
+PT.W.index[(PT.W.index$id %in% zero.id.W),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+}
 
 # WINSORIZE the alpha, pmax, omax, and breakpoint variables
 # TO PRESERVE order, delta needs to not equal 0 (can change delta value)
@@ -586,7 +591,6 @@ PT.W.index <- winsorize.index(PT.W.index,'Pmax', delta)
 #################################################################################################
 
 
-
 ##### ----- NON-WINSORIZED
 #################################################################################################
 #################################################################################################
@@ -594,7 +598,7 @@ PT.W.index <- winsorize.index(PT.W.index,'Pmax', delta)
 ### NON-WINSORIZED
 PT.nonW.index <- PT.nonW.results
 
-# CALCULATING Elasticity (curve data) requires the first 2 numbers to be non-zero
+##### ----- CALCULATING Elasticity (curve data) requires the first 2 numbers to be non-zero:
 nonW.temp_ind <- (PT.nonW.index[,2]==0)|(PT.nonW.index[,3]==0)
 nonW.temp_ind_both_0 <- (PT.nonW.index[,2]==0)&(PT.nonW.index[,3]==0)
 
@@ -613,14 +617,17 @@ PT.nonW.index[(nonW.temp_ind) &(!nonW.temp_ind_both_0),]$id
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
-PT.nonW.index[nonW.temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+### IDs with ZEROS in first 2 responses:
 
+zero.id.nonW <- PT.nonW.index[nonW.temp_ind,]$id
+
+if(length(zero.id.nonW>0)){
+PT.nonW.index[(PT.nonW.index$id %in% zero.id.nonW),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+}
 
 ################  ----------  OUTPUT FOR PURCHASE TASK REPORTS  ----------  #####################
 #################################################################################################
 #################################################################################################
-# The data frame PT.final.results does not have the same column names as the PT.W.index data frame
-# Therefore code is $id (and not $ID) = $R2 (and not $R2_t1)
 
 cat(nrow(PT.W.index),'/',tot.part,'=',100*nrow(PT.W.index)/tot.part,'% left after removal\n',sep='')
 cat(length(prices),' different price values, ',nrow(PT.W.index),' participants = ',
@@ -634,18 +641,19 @@ cat('Median R^2: ',median(PT.W.index$R2,na.rm=TRUE),
     ' (Interquartile range: ', IQR(PT.W.index$R2,na.rm=TRUE),'; min = ',min(PT.W.index$R2,na.rm=TRUE),
     ', max = ',max(PT.W.index$R2,na.rm=TRUE),')\n',sep='')
 
-
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK CONSOLE
 #################################################################################################
 
+
+################  ----------  SAVING PROCESSED DATA AND OUTPUT  ----------  #####################
 #################################################################################################
 #################################################################################################
-##### SAVE THE PURCHASE TASK DATA TO A .csv FILE or .xlsx FILE  #####
-#################################################################################################
-#################################################################################################
-# This merges the output with N = tot.part so that any participants that were 
-# removed for the purchase task have NAs in the purchase task output
-PT.W.index.final <- merge(purchase.task.df[c(1)],
+
+##### ----- DATA OUTPUT WITH ORIGINAL N PARTICIPANTS
+# This merges the output with N = tot.part so that any participants that were removed for the
+# purchase task have NAs in the purchase task output
+
+PT.W.index.final <- merge(purchase.task.df[c("id")],
   PT.W.index[c("id","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
 
 winso.names <- c("id","Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")
@@ -653,25 +661,32 @@ colnames(PT.W.index.final) <- winso.names
 
 PT.nonW <- PT.nonW.index[c("id","Alpha","Breakpoint","Intensity","Omax","Pmax")]
 
-PT.ALL.DATA <- merge(PT.nonW,PT.W.index.final, by = "id", all.x = TRUE)
+PT.ALL.DATA <- merge(PT.nonW,PT.W.index.final, by = "id", all.y = TRUE)
 
-### INDEX LEVEL VARIABLES DESCRIPTIVE STATISTICS
+##### ----- INDEX LEVEL VARIABLES DESCRIPTIVE STATISTICS
 PT.describe <-
   psych::describe(PT.ALL.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
                             "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
 PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
                       "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
 
-
 PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
-### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (WINSORIZED)
-price.stats <- psych::describe(PT.wide2[c(prices)])
-price.stats$vars <- purchase.task.names[-c(1)]
-price.stats <- price.stats[c("vars","n","mean","sd","se","min","max")]
 
-##### WRITE ALL TO CREATE A REPORT
-write.csv(PT.ALL.DATA, "purchase.task.csv", row.names = FALSE) ### PT DATA (WINSORIZED AND NON-WINSORIZED)
+##### ----- PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS:
+price.stats.W <- psych::describe(PT.wide2[c(prices)])
+price.stats.W$vars <- purchase.task.names[-c(1)]
+price.stats.W$vars <- paste0(price.stats.W$vars,"_W")
+price.stats.W <- price.stats.W[c("vars","n","mean","sd","se","min","max")]
 
-#write.csv(PT.describe,"PT.variables.csv", row.names = FALSE)
-#write.csv(price.stats, "price.level.variables.csv", row.names = FALSE) ### WINSORIZED
-#write.csv(df.winsor.track, "Appendix A.csv", row.names = FALSE)  ### Outlier changes by ID
+price.stats.nonW <- psych::describe(PT.wide[c(prices)])
+price.stats.nonW$vars <- purchase.task.names[-c(1)]
+price.stats.nonW <- price.stats.nonW[c("vars","n","mean","sd","se","min","max")]
+
+price.stats <- rbind(price.stats.W,price.stats.nonW)
+
+##### ----- WRITE ALL TO CREATE A REPORT
+#################################################################################################
+write.csv(PT.ALL.DATA, "purchase.task.csv", row.names = FALSE) ### PT DATA (WINSORIZED & NON-WINSORIZED)
+write.csv(PT.describe,"PT.variables.csv", row.names = FALSE) ### PT VARIABLES (WINSORIZED & NON-WINSORIZED)
+write.csv(price.stats, "price.level.variables.csv", row.names = FALSE) ### (WINSORIZED & NON-WINSORIZED)
+write.csv(df.winsor.track, "Appendix A.csv", row.names = FALSE)  ### Outlier changes by ID (WINSORIZED)

@@ -15,7 +15,7 @@ knitr::opts_chunk$set(error = TRUE, comment = "", results = 'asis')
 ###    REPORT WILL BE SAVED IN THIS LOCATION
 
 ### B) INPUT NAME OF .CSV FILE IN QUOTES
-pt.name <- "BETA.T1.csv" 
+pt.name <- "BETA.TEST.csv" 
 
 ### C) SELECT only the "ID", AND the names of the purchase task variables you want to analyze
 ###    COPY AND PASTE NAMES OF ID + PURCHASE TASK VARIABLE NAMES HERE:
@@ -504,9 +504,18 @@ if(length(PT.W.index[(temp_ind)&(temp_ind_both_0),]$id)>0){
 one.response.zero <- capture.output(cat(PT.W.index[(temp_ind)&(!temp_ind_both_0),]$id, sep='\n'))
 }
 
-PT.W.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+# CHANGE VALUES to NA if either first two responses = 0
+zero.id.W <- PT.W.index[temp_ind,]$id
 
-PT.nonW.index[temp_ind,][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+if(length(zero.id.W>0)){
+PT.W.index[(PT.W.index$id %in% zero.id.W),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+}
+
+zero.id.nonW <- PT.nonW.index[nonW.temp_ind,]$id
+
+if(length(zero.id.nonW>0)){
+PT.nonW.index[(PT.nonW.index$id %in% zero.id.nonW),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+}
 
 ```
 
