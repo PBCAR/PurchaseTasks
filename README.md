@@ -60,7 +60,7 @@ b) Input the name of your data file (this script is set up to only import .csv f
   
 c) Select the type of purchase task: APT, CPT, or MPT
 
-d) Copy and Paste the ID variable name, along with the name of the purchase task items ONLY
+d) Copy and Paste the ID variable name, along with the name of the purchase task items ONLY (the iD name must be first in the list)
 
 e) Input the total N of participants in the data set
 
@@ -78,4 +78,16 @@ iv) "Appendix A.csv" - This provides a table of all the outlying values that wer
 
 # Purchase Task Report
 
-This script uses Rmarkdown to produce a PDF report of the data processed. It should only be used by those who are familiar with (and can trouble-shoot) R markdown files. 
+This script uses R-markdown to produce a PDF report of the processed data. It is an alternative to the output produced by the `Purchase Task Template.R`. The benefits of using this script to produce a report is that all the information about the data processing is provided and therefore documented.
+
+It requires the user to:
+
+A) Save the data set and the script in the same file location
+
+B) Name of the .csv file
+
+C) The name of the participant ID variable along with the names of the purchase task variables ONLY (the ID name must be first in the list)
+
+D) Select the type of purchase task: APT, CPT, or MPT
+
+E) Input the total N of participants included in the data set
