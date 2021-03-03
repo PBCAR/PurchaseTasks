@@ -459,7 +459,7 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
       q <- 1
       for (ab_399 in sort(above_399)){
        # print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
-        cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),' the ',var_name,' value was changed from ',
+        cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),'\n','the ',var_name,' value was changed from ',
             ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
         q <- q + 1
@@ -469,7 +469,7 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
       for (bel_399 in sort(below_neg399,decreasing = TRUE)){
         q <- 1
        # print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
-        cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],' the ',var_name,' value was changed from',
+        cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],'\n','the ',var_name,' value was changed from ',
             bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == bel_399] <- min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta
         q <- q + 1
@@ -697,8 +697,7 @@ price.stats <- psych::describe(PT.wide2[c(prices)])
 price.stats$vars <- purchase.task.names[-c(1)]
 price.stats <- price.stats[c("vars","n","mean","sd","se","min","max")]
 
-
-### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (WINSORIZED)
+### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (NON-WINSORIZED)
 nonW.price.stats <- psych::describe(PT.wide[c(prices)])
 nonW.price.stats$vars <- purchase.task.names[-c(1)]
 nonW.price.stats <- nonW.price.stats[c("vars","n","mean","sd","se","min","max")]
