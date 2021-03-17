@@ -50,19 +50,21 @@ This script utilizes the {beezdemand} package to process the behavioural economi
 
 ## Changes Required:
 
-There are 5 changes required by the user of this script. These are outlined at the top of the script, with examples:
+There are 6 changes required by the user of this script. These are outlined at the top of the script, with examples:
 
 a) Set your working directory - This is the file location of your data to be analyzed. To set your working directory, go to:
 
       Session > Set Working Directory > Choose Directory
  
 b) Input the name of your data file (this script is set up to only import .csv files)
-  
-c) Select the type of purchase task: APT, CPT, or MPT
 
-d) Copy and Paste the ID variable name, along with the name of the purchase task items ONLY (the iD name must be first in the list)
+c) Copy and Paste the ID variable name, along with the name of the purchase task items ONLY (the iD name must be first in the list)
 
-e) Input the total N of participants in the data set
+d) ASSIGN the price associated with each purchase task item
+
+e) IDENTIFY the maximum allowed value identified in the purchase task
+
+f) Input the total N of participants in the data set
 
 ## The Script:
 
@@ -74,7 +76,7 @@ ii) "PT.variables.csv" - This provides the descriptive statistics of the purchas
 
 iii) "price.level.variables.csv" - This provides the descriptive statistics of the price-level variables (the initial items of the purchase task both winsorized and non-winsorized)
 
-iv) "Appendix A.csv" - This provides a table of all the outlying values that were changed by ID (through winsorizing)
+iv) "Appendix.csv" - This provides a table of all the outlying values that were changed by ID (through winsorizing)
 
 # Purchase Task Report
 
