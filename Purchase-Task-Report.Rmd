@@ -9,16 +9,19 @@ knitr::opts_chunk$set(error = TRUE, comment = "", results = 'asis')
 
 ##### ----------  REQUIRED CHANGES BY USER:
 ###############################################################################################
-##### PLEASE MAKE THE NECESSARY CHANGES IN THIS R CHUNK CODE ONLY
+##### PLEASE MAKE THE NECESSARY CHANGES IN THIS R CODE CHUNK ONLY
 
 ### A) SAVE THIS SCRIPT IN THE SAME FILE AS THE DATA SET 
-###    REPORT WILL BE SAVED IN THIS LOCATION
+###    THE REPORT WILL BE SAVED IN THIS LOCATION
 
 ### B) INPUT NAME OF .CSV FILE IN QUOTES
 pt.name <- "PATH CANN W1.csv" 
 
-### C) SELECT only the "ID", AND the names of the purchase task variables you want to analyze
-###    COPY AND PASTE NAMES OF ID + PURCHASE TASK VARIABLE NAMES HERE:
+### C) SELECT TYPE OF PURCHASE TASK: "APT", "CPT", OR "MPT"
+pt.task <- "APT"
+
+### D) SELECT only the "ID", AND the names of the purchase task variables you want to analyze by
+###    COPYING AND PASTING the names of the ID + Purchase Task Variable names HERE:
 
 purchase.task.names <- c("ID","apt000","apt025","apt050","apt1","apt150",
                   "apt2","apt250","apt3","apt4","apt5","apt6",
@@ -26,10 +29,17 @@ purchase.task.names <- c("ID","apt000","apt025","apt050","apt1","apt150",
                   "apt13","apt14","apt15","apt16","apt18","apt20",	
                   "apt22","apt24","apt26","apt28","apt30","apt35","apt40")
 
-### D) SELECT TYPE OF PURCHASE TASK: "APT", "CPT", OR "MPT"
-pt.task <- "APT"
+### E) ASSIGN the price associated with each purchase task item
 
-### E) CHANGE to = total N participants in data set
+purchase.price <- c("0","0.25","0.50","1","1.50","2","2.50","3","4","5","6",
+                    "7","8","9","10","11","12","13","14","15","16","18","20",
+                    "22","24","26","28","30","35","40")
+
+### F) IDENTIFY the maximum allowed value identified in the purchase task
+
+max.val <- 99
+
+### G) CHANGE to = total N participants in data set
 tot.part <- 1502
 
 ##### ----------  OPTIONAL CHANGES:
@@ -47,13 +57,9 @@ wins.type <- 'preserve_order'
 
 
 ``` {r, include=FALSE, error=TRUE}
-library(dplyr)
-library(psych)
-library(writexl)
-library(beezdemand)
 
 #################################################################################################
-##### STEP '0': DATA INPUT AND FORMATTING PRIOR TO CLEANING AND PROCESSING
+##### STEP 0: DATA INPUT AND FORMATTING PRIOR TO CLEANING AND PROCESSING
 #################################################################################################
 library(dplyr)
 library(psych)
@@ -63,18 +69,14 @@ purchase.task.df <- read.csv(pt.name)
 purchase.task.df <- purchase.task.df[c(purchase.task.names)]
 
 # RENAMES the columns in the data frame to "id" (required), plus the price of each purchase task item
-apt.item.names <- c("id","0","0.25","0.50","1","1.50","2","2.50","3","4","5","6","7","8","9",
-                    "10","11","12","13","14","15","16","18","20","22","24","26","28","30","35","40")
-cpt.item.names <- c("id","0","0.05","0.10","0.15","0.20","0.25","0.30","0.35","0.40","0.45",
-                    "0.50","0.60","0.70","0.80","0.90","1","1.2","1.4","1.6","1.8","2","4")
-mpt.item.names <- c("id","0","1","2","4","6","8","10","12","14","16","18","20","25",
-                    "30","35","40","45","50","55","60")
-
 if(pt.task=="APT") {
+  apt.item.names <- c("id",purchase.price)
   colnames(purchase.task.df) <- apt.item.names
 } else if(pt.task=="CPT") {
+  cpt.item.names <- c("id",purchase.price)
   colnames(purchase.task.df) <- cpt.item.names
 } else if(pt.task=="MPT") {
+  mpt.item.names <- c("id",purchase.price)
   colnames(purchase.task.df) <- mpt.item.names
 }
 
@@ -92,6 +94,7 @@ prices <- purchase.task.items
 
 #################################################################################################
 ##### STEP 1: IMPUTE ALL PERTINENT ZEROS
+#################################################################################################
 
 for (id_num in purchase.task.df$id){
   if (purchase.task.df[purchase.task.df[,"id"]==id_num,][max(which(!is.na(purchase.task.df[purchase.task.df[,"id"]==id_num,])))] == 0){
@@ -116,6 +119,7 @@ if(pt.task=="MPT") {
 
 #################################################################################################
 ##### STEP 2: REVIEW MISSING DATA
+#################################################################################################
 
 missing.id <- {}
 for (id_num in purchase.task.df$id){
@@ -128,7 +132,8 @@ for (id_num in purchase.task.df$id){
 purchase.task.df2 <- purchase.task.df[!purchase.task.df[,"id"] %in% missing.id,]
 
 #################################################################################################
-##### STEPS 3 & 4: VIOLATION OF TREND AND BOUNCE RATIO CRITERION
+##### STEPS 3: VIOLATION OF TREND AND BOUNCE RATIO CRITERION
+#################################################################################################
 
 remove.id.trend = {}
 for (id_num in purchase.task.df2$id){
@@ -181,7 +186,8 @@ good.id.list <- check.unsys$id[!fail.list]
 PT.long2 <- PT.long[!is.na(match(PT.long$id,good.id.list)),]
 
 #################################################################################################
-##### STEP 5: OUTLIER MANAGEMENT AT THE PRICE LEVEL
+##### STEP 4: OUTLIER MANAGEMENT AT THE PRICE LEVEL
+#################################################################################################
 
 # RESHAPE the data back from long to wide format to winsorize the data
 PT.wide <- reshape(as.data.frame(PT.long2), idvar = "id", v.names = "y", timevar = "x", direction = "wide")
@@ -288,7 +294,8 @@ PT.W.long2$x <- prices
 PT.nonW.long2 <- PT.long2
 
 #################################################################################################
-##### STEP 6: ELASTICITY MODELLING TESTS
+##### STEP 5: ELASTICITY MODELLING TESTS
+#################################################################################################
 
 ##### ----- WINSORIZED
 PT.emp <- GetEmpirical(dat = PT.W.long2)
@@ -441,7 +448,9 @@ item.names <- c("id",prices,"Q0d", "K", "Alpha", "R2", "EV", "Omax_curve",
 colnames(PT.nonW.results) <- item.names
 
 #################################################################################################
-##### STEP 7: WINSORIZING INDEX VARIABLES (ALPHA, PMAX, ETC.)
+##### STEP 6: WINSORIZING INDEX VARIABLES (ALPHA, PMAX, ETC.)
+#################################################################################################
+
 # CREATES a FUNCTION for winsorizing index variables
 winsorize.index <- function(all_out_temp,var_name,delta) {
   all_out <- all_out_temp[!is.na(all_out_temp[,c(var_name)]),]
@@ -458,7 +467,6 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(above_399)>0){
       q <- 1
       for (ab_399 in sort(above_399)){
-       # print(as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]) )
         cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),'\n','the ',var_name,' value was changed from ',
             ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
@@ -468,7 +476,6 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(below_neg399)>0){
       for (bel_399 in sort(below_neg399,decreasing = TRUE)){
         q <- 1
-       # print(all_out[all_out[,c(var_name)] == bel_399,c('id')])
         cat('For ID(s) ',all_out[all_out[,c(var_name)] == bel_399,c('id')],'\n','the ',var_name,' value was changed from ',
             bel_399,' to ',min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == bel_399] <- min(all_out[,c(var_name)][alpha_zs > -3.99]) - q*delta
