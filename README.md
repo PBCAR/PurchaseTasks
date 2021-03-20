@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/305256955.svg)](https://zenodo.org/badge/latestdoi/305256955)
 
 # PurchaseTasks Repository 
-This repository contains the script for processing purchase task data. This READ ME document introduces users to purchase tasks. It also walks users through the process of running this script who have little working knowledge of R.
+This repository contains the script for processing purchase task data. This READ ME document introduces users to purchase tasks, and walks users through the process of running this script who have little working knowledge of R.
 
 # Introduction to Purchase Tasks
 
