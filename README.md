@@ -22,7 +22,7 @@ These demand instruments are used to measure the reinforcer pathology - the exte
 
 Purchase tasks often use branching logic in administering the questions, such that no further prices are presented after a zero response within an array. Individuals who contradict themselves at the last item of the array are considered missing and are removed, since it cannot be assumed that all subsequent responses would be zeroes.
 
-## Quality control removes individuals who do NOT meet the following:
+## Quality control removes individuals who:
 
 i) Do not exhibit a decelerating trend (referred to as a trend violation). Does not include those with a starting value of 0
 
