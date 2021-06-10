@@ -31,11 +31,11 @@ ii) Exhibit a bounce ratio of of 10% or higher (inconsistencies in values given)
 iii) Exhibit 2 or more reversals. A reversal is 2 or more consecutive 0's prior to a positive value
 
 
-**Winsorization at the price level** occurs for values with a z score +/- 3.99, whereby the outlying value is changed to the nearest non-outlying value.
+**Winsorization at the price level** occurs for values with a z score +/- 3.99, whereby the outlying value is changed to one unit above the nearest non-outlying value. For the price level, a unit is 1 standard amount consumed such as 1 drink, 1 cigarette, or 1 gram of cannabis.
 
 **Winsorizing at the index level** occurs for values with a z score +/- 3.99. Outliers are recoded as 0.001 greater than the next highest non-outlying value, thus retaining order.
 
-The winsorizing type used for both price and index level values is preserve order winsorization, as opposed to other techniques such as replacing all outliers with the corresponding +/- 3.99 regular value rounded up or with a value that is 1 higher than the highest non-outlying value (see {beezdemand} package documentation).
+The winsorizing type used for both price and index level values is preserve order winsorization, as opposed to other techniques such as replacing all outliers with the corresponding +/- 3.99 regular value rounded up or with a value that is a unit higher than the highest non-outlying value (see {beezdemand} package documentation).
 
 # Purchase Task Template
 
