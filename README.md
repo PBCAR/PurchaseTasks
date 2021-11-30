@@ -48,7 +48,7 @@ ii) Non-winsorized variables (no outlier management)
 
 ## Packages:
 
-This script utilizes the {beezdemand} package to process the behavioural economic data. It also utilizes {dplyr} and {psych} packages
+This script utilizes the {[beezdemand](https://github.com/brentkaplan/beezdemand)} package to process the behavioural economic data. It also utilizes {dplyr} and {psych} packages
 
 ## Changes Required:
 
