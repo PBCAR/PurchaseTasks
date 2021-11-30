@@ -209,12 +209,17 @@ wide.zs <- scale(PT.wide, center = TRUE, scale = TRUE)
 # CREATE a new data frame for the winsorized data, so original values can later be referred to
 PT.wide2 <- PT.wide
 
+##### MODIFIED Price List (if final price array not reached)
+nan.price <- psych::describe(wide.zs)
+nan.price$vars <- c("id",prices)
+mod.prices <- nan.price$vars[nan.price$n!=0]
+
 ##### ----------  WINSORIZING TYPE - OPTION 1:
 #################################################################################################
 # 1: Values with a SD over 3.99 are replaced with their corresponding 3.99 regular value rounded up
 
 if (wins.type=="1_higher_sd"){
-  for (price in prices){
+  for (price in mod.prices){
     PT.wide2[wide.zs[,price]> 3.99,price] <- ceiling(3.99*sd(PT.wide2[,price])+
                                                        mean(PT.wide2[,price]))
     PT.wide2[wide.zs[,price]< -3.99,price] <- floor(-3.99*sd(PT.wide2[,price])+
@@ -228,7 +233,7 @@ if (wins.type=="1_higher_sd"){
 # 2: All outliers are replaced with 1 higher than highest (or 1 lower than the lowest) non-outlying value
 
 if (wins.type=="1_higher_max_non_outlier"){
-  for (price in prices){
+  for (price in mod.prices){
     PT.wide2[wide.zs[,price]> 3.99,price] <- max(PT.wide2[wide.zs[,price]< 3.99,price]) + 1
     PT.wide2[wide.zs[,price]< -3.99,price] <- min(PT.wide2[wide.zs[,price]> -3.99,price]) - 1
   }
@@ -239,7 +244,7 @@ if (wins.type=="1_higher_max_non_outlier"){
 # 3: Order is maintained by replacing outlying values with 1 unit above the next highest non-outlying value
 
 if (wins.type=="preserve_order"){
-  for (price in prices){
+  for (price in mod.prices){
     above.399 <- unique(wide.zs[wide.zs[,price]> 3.99,price])
     below.neg399 <- unique(wide.zs[wide.zs[,price]< -3.99,price])
     if (length(above.399)>0){
