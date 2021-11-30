@@ -601,6 +601,12 @@ cat(max(PT.W.index$R2,na.rm=TRUE))
 
 # Mean Curve:
 
+```{r model.plot, echo=FALSE}
+PT <- FitCurves(dat = PT.W.long2, equation = "koff",k = k.value.final, agg = "Mean", detailed = T)
+plot.pt <- PlotCurve(PT$adfs[[1]], PT$dfres[1, ], PT$newdats[[1]])
+plot.pt + ggtitle("Mean Curve (winsorized)") + theme_apa()
+```
+
 #### Winsorized:
 ``` {r mean.curve, echo=FALSE, results='markup'}
 knitr::kable(mean.curve.final[c(-1)])
