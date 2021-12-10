@@ -70,6 +70,7 @@ wins.type <- 'preserve_order'
 library(dplyr)
 library(psych)
 library(beezdemand)
+library(ggplot2)
 
 purchase.task.df <- read.csv(pt.name)
 purchase.task.df <- purchase.task.df[c(id.name,purchase.task.names)]
@@ -175,16 +176,11 @@ wide.zs <- scale(PT.wide, center = TRUE, scale = TRUE)
 
 PT.wide2 <- PT.wide
 
-##### MODIFIED Price List (if final price array not reached)
-nan.price <- psych::describe(wide.zs)
-nan.price$vars <- c("id",prices)
-mod.prices <- nan.price$vars[nan.price$n!=0]
-
 ##### ----------  WINSORIZING TYPE - OPTION 1:
 #################################################################################################
 # 1: Values with a SD over 3.99 are replaced with their corresponding 3.99 regular value rounded up
 if (wins.type=="1_higher_sd"){
-  for (price in mod.prices){
+  for (price in prices){
     PT.wide2[wide.zs[,price]> 3.99,price] <- ceiling(3.99*sd(PT.wide2[,price])+
                                                        mean(PT.wide2[,price]))
     PT.wide2[wide.zs[,price]< -3.99,price] <- floor(-3.99*sd(PT.wide2[,price])+
@@ -197,7 +193,7 @@ if (wins.type=="1_higher_sd"){
 #################################################################################################
 # 2: All outliers are replaced with 1 higher than highest (or 1 lower than the lowest) non-outlying value
 if (wins.type=="1_higher_max_non_outlier"){
-  for (price in mod.prices){
+  for (price in prices){
     PT.wide2[wide.zs[,price]> 3.99,price] <- max(PT.wide2[wide.zs[,price]< 3.99,price]) + 1
     PT.wide2[wide.zs[,price]< -3.99,price] <- min(PT.wide2[wide.zs[,price]> -3.99,price]) - 1
   }
@@ -207,7 +203,7 @@ if (wins.type=="1_higher_max_non_outlier"){
 #################################################################################################
 # 3: Order is maintained by replacing outlying values with 1 unit above the next highest non-outlying value
 if (wins.type=="preserve_order"){
-  for (price in mod.prices){
+  for (price in prices){
     above.399 <- unique(wide.zs[wide.zs[,price]> 3.99,price])
     below.neg399 <- unique(wide.zs[wide.zs[,price]< -3.99,price])
     if (length(above.399)>0){
@@ -506,26 +502,22 @@ cat(tot.n)
 
 # Missing Data
 
-#### ID's with Missing Data:
-
+ID's with Missing Data:
 ```{r missing1, echo=FALSE}
 cat(missing.id)
 ```
 
-#### ID's with Trend Violations:
- 
+ID's with Trend Violations:
 ```{r missing2, echo=FALSE}
 cat(remove.id.trend)
 ```
 
-#### Bounce Ratio:
-
+Bounce Ratio:
 ```{r missing3, echo=FALSE}
 cat('The bounce ratio was set at',(bounce.crit*100),'%')
 ```
 
-#### ID's Removed due to Bounce Ratio Violation:
-
+ID's Removed due to Bounce Ratio Violation:
 ```{r missing.bounce, echo=FALSE}
 cat(remove.id.bounce)
 ```
@@ -533,22 +525,20 @@ cat(remove.id.bounce)
 
 # After Removal
 
-#### Individuals Left After Removal:
-
+Individuals Left After Removal:
 ```{r removal, echo=FALSE}
 cat(nrow(PT.W.index),'/',tot.n,'=',100*nrow(PT.W.index)/tot.n,'% left after removal\n',sep='')
 ```
 
-#### Price Points:
+Price Points:
 ```{r removal2, echo=FALSE}
 cat(length(prices),' different price values, ',nrow(PT.W.index),' individuals = ',
     nrow(PT.W.index)*length(prices),' data points\n',sep='')
 ```
 
-#### Outliers:
+Outliers:
 
 *See Appendix for specific changes by ID*
-
 
 ```{r outliers, echo=FALSE}
 cat(nrow(df.winsor.track),' outlying values (',
@@ -557,54 +547,54 @@ cat(nrow(df.winsor.track),' outlying values (',
 
 # Elasticity Modelling Tests:
 
-#### ID's with a zero value for the first and/or second purchase task item:
+ID's with a zero value for the first and/or second purchase task item:
 ```{r elasticity, echo=FALSE}
 cat(one.response.zero)
 ```
 
 # Model Fitting (Winsorized)
 
-#### K values tested
+K values tested:
 ```{r model.fitting, echo=FALSE}
 cat(k.span)
 ```
 
-#### K value selected:
+K value selected:
 ``` {r model.fit2, echo=FALSE}
 cat(min(PT.W.index$K))
 ```
 
-#### Mean $R^{2}$:
+Mean $R^{2}$:
 ``` {r model.fit3, echo=FALSE}
 cat(PT.final.results[PT.final.results$id=='mean.curve',]$R2)
 ```
 
-#### Median $R^{2}$:
+Median $R^{2}$:
 ```{r model.fit4, echo=FALSE}
 cat(median(PT.W.index$R2,na.rm=TRUE))
 ```
 
-#### Inter-Quartile Range:
+Inter-Quartile Range:
 ```{r model.fit5, echo=FALSE}
 cat(IQR(PT.W.index$R2,na.rm=TRUE))
 ```
 
-#### Min:
+Min:
 ```{r model.fit6, echo=FALSE}
 cat(min(PT.W.index$R2,na.rm=TRUE))
 ```
 
-#### Max:
+Max:
 ```{r model.fit7, echo=FALSE}
 cat(max(PT.W.index$R2,na.rm=TRUE))
 ```
 
-# Mean Curve:
+## Mean Winsorized Curve:
 
-```{r model.plot, echo=FALSE}
+```{r model.plot.apt, echo=FALSE}
 PT <- FitCurves(dat = PT.W.long2, equation = "koff",k = k.value.final, agg = "Mean", detailed = T)
-plot.pt <- PlotCurve(PT$adfs[[1]], PT$dfres[1, ], PT$newdats[[1]])
-plot.pt + ggtitle("Mean Curve (winsorized)") + theme_apa()
+plot.apt <- PlotCurve(PT$adfs[[1]], PT$dfres[1, ], PT$newdats[[1]])
+plot.apt + ggtitle("Mean Curve") + theme_apa()
 ```
 
 #### Winsorized:
@@ -619,8 +609,7 @@ knitr::kable(nonW.mean.curve.final[c(-1)])
 
 # Price-Level Winsorizing of Outlying values:
 
-#### Change in Breakpoints (reversals to 1st 0 consumption reached):
-
+Change in Breakpoints (reversals to 1st 0 consumption reached):
 ```{r breakpoint.price.level, echo=FALSE}
 cat(breakpoint.change)
 ```
@@ -652,14 +641,6 @@ PT.nonW <- PT.nonW.index[c("id","Omax_curve","Pmax_curve","Alpha","Breakpoint","
 
 PT.ALL.DATA <- merge(PT.nonW,PT.W.index.final, by = "id", all.x = TRUE)
 
-### INDEX LEVEL VARIABLES DESCRIPTIVE STATISTICS
-PT.describe <- psych::describe(PT.ALL.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
-                              "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
-PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
-                      "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
-
-PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
-
 ### PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS (WINSORIZED)
 price.stats <- psych::describe(PT.wide2[c(prices)])
 price.stats$vars <- purchase.task.names
@@ -670,13 +651,57 @@ nonW.price.stats <- psych::describe(PT.wide[c(prices)])
 nonW.price.stats$vars <- purchase.task.names
 nonW.price.stats <- nonW.price.stats[c("vars","n","mean","sd","se","min","max")]
 
-## Change column names for Appendix A:
+### DATA TRANSFORMATIONS
+# Determine best transformation of (winsorized) variables and save to data set
+# since a value of 0 is possible for Breakpoint, Intensity, Omax, and Pmax,
+# a small constant (0.1) is added prior to log10 transformation
 
+se <- function(x) sqrt(var(x,na.rm = T)/length(x))
+
+PT.TRFMED <- PT.ALL.DATA
+
+PT.LOG.TRFMED <- log10(PT.ALL.DATA[c("Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")]+0.1)
+PT.LOG.TRFMED <- PT.LOG.TRFMED %>%
+  rename(Alpha_Log = Alpha_W, Breakpoint_Log = Breakpoint_W,
+         Intensity_Log = Intensity_W, Omax_Log = Omax_W, Pmax_Log = Pmax_W)
+
+PT.SQRT.TRFMED <- sqrt(PT.ALL.DATA[c("Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")])
+PT.SQRT.TRFMED <- PT.SQRT.TRFMED %>%
+  rename(Alpha_Sqrt = Alpha_W, Breakpoint_Sqrt = Breakpoint_W,
+         Intensity_Sqrt = Intensity_W, Omax_Sqrt = Omax_W, Pmax_Sqrt = Pmax_W)
+
+PT.TRFMED <- cbind(PT.TRFMED,PT.LOG.TRFMED,PT.SQRT.TRFMED)
+PT.ALL.TRANSFORMED <- PT.TRFMED ### TO SAVE AS OUTPUT
+
+PT.TRFMED <- PT.TRFMED %>%
+  rename(Alpha_NonWinsorized = Alpha, Alpha_Winsorized = Alpha_W,
+         Breakpoint_NonWinsorized = Breakpoint, Breakpoint_Winsorized = Breakpoint_W,
+         Intensity_NonWinsorized = Intensity, Intensity_Winsorized = Intensity_W,
+         Omax_NonWinsorized = Omax, Omax_Winsorized = Omax_W,
+         Pmax_NonWinsorized = Pmax, Pmax_Winsorized = Pmax_W)
+
+
+PT.describe <- psych::describe(PT.ALL.TRANSFORMED[c("Alpha","Alpha_W","Alpha_Log","Alpha_Sqrt",
+                                                    "Breakpoint","Breakpoint_W","Breakpoint_Log","Breakpoint_Sqrt",
+                                                    "Intensity","Intensity_W","Intensity_Log","Intensity_Sqrt",
+                                                    "Omax","Omax_W","Omax_Log","Omax_Sqrt",
+                                                    "Pmax","Pmax_W","Pmax_Log","Pmax_Sqrt")])
+
+PT.describe$vars <- c("Alpha","Alpha_W","Alpha_Log","Alpha_Sqrt",
+                      "Breakpoint","Breakpoint_W","Breakpoint_Log","Breakpoint_Sqrt",
+                      "Intensity","Intensity_W","Intensity_Log","Intensity_Sqrt",
+                      "Omax","Omax_W","Omax_Log","Omax_Sqrt",
+                      "Pmax","Pmax_W","Pmax_Log","Pmax_Sqrt")
+
+PT.describe <- PT.describe[c("vars","n","mean","sd","min","max",
+                             "skew","kurtosis","se")]
+
+## Change column names for Appendix A:
 colnames(df.winsor.track) <- c("ID","Price","Before Winsorization","After Winsorization")
 
 ```
 
-# Final Winsorized & Non-Winsorized Purchase Task Variable Descriptives
+# Final Winsorized & Non-Winsorized Purchase Task Variable Descriptives & Transformations
 
 Winsorized variables are denoted by "_W"
 
