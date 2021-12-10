@@ -77,7 +77,7 @@ The rest of the script provides prompts for the user, specifically pointing out 
 
 i) "purchase.task.csv" - This merges the processed data with the original inputted data (all N)
 
-ii) "PT.variables.csv" - This provides the descriptive statistics of the purchase task variables (both winsorized and non-winsorized)
+ii) "PT.variables.csv" - This provides the descriptive statistics of the purchase task variables (both winsorized and non-winsorized, as well as log10 and square root transformations of the winsorized index-level variables)
 
 iii) "price.level.variables.csv" - This provides the descriptive statistics of the price-level variables (the initial items of the purchase task both winsorized and non-winsorized)
 
