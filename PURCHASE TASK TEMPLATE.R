@@ -22,7 +22,7 @@ id.name <- "ID"
 purchase.task.names <- c("apt000","apt025","apt050","apt1","apt150",
                          "apt2","apt250","apt3","apt4","apt5","apt6",
                          "apt7","apt8","apt9","apt10","apt11","apt12",
-                         "apt13","apt14","apt15","apt16","apt18","apt20",	
+                         "apt13","apt14","apt15","apt16","apt18","apt20",
                          "apt22","apt24","apt26","apt28","apt30","apt35","apt40")
 
 ### e) ASSIGN the price associated with each purchase task item:
@@ -57,6 +57,7 @@ wins.type <- 'preserve_order'
 library(dplyr)
 library(psych)
 library(beezdemand)
+library(ggplot2)
 
 purchase.task.df <- read.csv(pt.name)
 purchase.task.df <- purchase.task.df[c(id.name,purchase.task.names)]
@@ -92,7 +93,7 @@ purchase.task.df[,2:ncol(purchase.task.df)][purchase.task.df[,2:ncol(purchase.ta
 #################################################################################################
 # Missing data are reviewed next. Individuals who contradict themselves at the last item of
 # the array are considered missing. A valid imputation is not possible when the last non-missing
-# value is non-zero, because it is not clear whether all subsequent responses would be zeros.  
+# value is non-zero, because it is not clear whether all subsequent responses would be zeros.
 #################################################################################################
 ###### ----- IDENTIFIES IDs with NA values:
 
@@ -126,7 +127,7 @@ purchase.task.df2 <- purchase.task.df[!purchase.task.df[,"id"] %in% missing.id,]
 
 remove.id.trend = {}
 for (id_num in purchase.task.df2$id){
-  if ( (purchase.task.df2[purchase.task.df2$id == id_num,prices[1]]>0) & 
+  if ( (purchase.task.df2[purchase.task.df2$id == id_num,prices[1]]>0) &
        (purchase.task.df2[purchase.task.df2$id == id_num,prices[1]] <= purchase.task.df2[purchase.task.df2$id == id_num,prices[length(prices)]]) ){
     purchase.task.df2 <- purchase.task.df2[!purchase.task.df2[,"id"] %in% c(id_num),]
     remove.id.trend <- append(remove.id.trend,id_num)
@@ -163,7 +164,7 @@ for (id_num in purchase.task.df2$id){
 # RESHAPE data from wide to long to CHECK for reversals
 # The {beezdemand} package requires column names to = "id", "x", "y"
 
-PT.long <- reshape(as.data.frame(purchase.task.df2), idvar = "id", 
+PT.long <- reshape(as.data.frame(purchase.task.df2), idvar = "id",
                    varying = prices,
                    v.names = "y", timevar = "x", sep = "", direction = "long")
 
@@ -178,7 +179,7 @@ PT.long$x <- prices
 
 # 'ncons0' Is the number of consecutive 0s prior to a positive value that is used to flag a reversal
 
-check.unsys <- CheckUnsystematic(dat = PT.long, deltaq = -0.01, bounce = bounce.crit, 
+check.unsys <- CheckUnsystematic(dat = PT.long, deltaq = -0.01, bounce = bounce.crit,
                                  reversals = 1.5, ncons0 = 2)
 
 # IDENTIFIES IDs with 2 or more reversals
@@ -273,7 +274,7 @@ if (wins.type=="preserve_order"){
 # IDENTIFY which items have been changed for which IDs via winsorization
 df.winsor.track <- data.frame(ID=integer(),
                               Price=numeric(),
-                              Bef_Winsor=integer(), 
+                              Bef_Winsor=integer(),
                               After_Winsor=integer())
 i = 1
 for (id_num in PT.wide$id){
@@ -295,7 +296,7 @@ for (id_num in PT.wide$id){
 ##### RESHAPE winsorized data from wide to long format
 # ! # "W" in dataframe stands for winsorized data
 
-PT.W.long <- reshape(as.data.frame(PT.wide2), idvar = "id", 
+PT.W.long <- reshape(as.data.frame(PT.wide2), idvar = "id",
                      varying = prices,
                      v.names = c("y"), timevar = c("x"), sep = "", direction = "long")
 
@@ -328,7 +329,7 @@ R2.val.k <- {}
 
 # The k-values tested are in the 'k.span' object, input by the user (default is values 2, 3, and 4)
 for (k_value in k.span){
-  mean.curve <- FitCurves(dat = PT.long2, equation = "koff", 
+  mean.curve <- FitCurves(dat = PT.long2, equation = "koff",
                           k = k_value, agg='Mean')
   R2.val.k <- append(R2.val.k, mean.curve$R2)
 }
@@ -337,15 +338,36 @@ for (k_value in k.span){
 # ! # Ties are broken by choosing the lower k-value
 k.value.final <- min(k.span[R2.val.k == max(R2.val.k)])
 
-mean.curve <- FitCurves(dat = PT.W.long2, equation = "koff", 
-                        k = k.value.final, agg='Mean')
+mean.curve <- FitCurves(dat = PT.W.long2, equation = "koff",
+                        k = k.value.final, agg='Mean', detailed = T)
 
-mean.curve$id <- c('mean.curve')
-mean.curve.final <- mean.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
+mean.curve.final <- mean.curve[["dfres"]]
+mean.curve.final$id <- c('mean.curve')
+mean.curve.final <- mean.curve.final[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
 colnames(mean.curve.final) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
-print(mean.curve.final)
 
-part.curve <- FitCurves(dat = PT.W.long2, equation = "koff", 
+##### ----- Plot Mean Curve:
+PlotCurve(mean.curve$adfs[[1]],
+          mean.curve$dfres[1,],
+          mean.curve$newdats[[1]]) +
+  ggtitle(paste0("Mean Curve")) + theme_classic() +
+  geom_text(data = mean.curve.final,
+            mapping = aes(label = paste0("Elasticity: ", round(Alpha, digits = 4),
+                                         "\n Q0: ", round(Q0d, digits = 2),
+                                         "\n Pmax: ", round(Pmax_curve, digits = 2),
+                                         "\n Omax: ", round(Omax_curve, digits = 2)),
+                                   x = Inf, y = Inf, hjust = 1, vjust = 1),
+            alpha = c(0,1), # two sets of geom_text appear due to split axis needed by beezdemand
+            size = 5, fontface = "bold", show.legend = F) +
+  theme(title = element_text(size = 25, face = "bold"),
+        axis.title = element_text(size = 15, face = "bold"),
+        axis.text = element_text(size = 10, face = "bold"),
+        strip.background = element_blank(), strip.text = element_blank())
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+part.curve <- FitCurves(dat = PT.W.long2, equation = "koff",
                         k = k.value.final, agg=NULL)
 
 spec.curve <- part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
@@ -405,8 +427,8 @@ nonW.R2.val.k <- {}
 
 # The k-values tested are in the 'k.span' object, input by the user (default is values 2, 3, and 4)
 for (k_value in k.span){
-  nonW.mean.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff", 
-                          k = k_value, agg='Mean')
+  nonW.mean.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff",
+                               k = k_value, agg='Mean')
   nonW.R2.val.k <- append(nonW.R2.val.k, nonW.mean.curve$R2)
 }
 
@@ -414,15 +436,36 @@ for (k_value in k.span){
 # ! # Ties are broken by choosing the lower k-value
 nonW.k.value.final <- min(k.span[nonW.R2.val.k == max(nonW.R2.val.k)])
 
-nonW.mean.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff", 
-                        k = nonW.k.value.final, agg='Mean')
+nonW.mean.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff",
+                             k = nonW.k.value.final, agg='Mean', detailed = T)
 
-nonW.mean.curve$id <- c('nonW.mean.curve')
-nonW.mean.curve.final <- nonW.mean.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
+nonW.mean.curve.final <- nonW.mean.curve[["dfres"]]
+nonW.mean.curve.final$id <- c('mean.curve')
+nonW.mean.curve.final <- nonW.mean.curve.final[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
 colnames(nonW.mean.curve.final) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
-print(nonW.mean.curve.final)
 
-nonW.part.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff", 
+##### ----- Plot Mean Curve:
+PlotCurve(nonW.mean.curve$adfs[[1]],
+          nonW.mean.curve$dfres[1,],
+          nonW.mean.curve$newdats[[1]]) +
+  ggtitle(paste0("Mean Curve")) + theme_classic() +
+  geom_text(data = mean.curve.final,
+            mapping = aes(label = paste0("Elasticity: ", round(Alpha, digits = 4),
+                                         "\n Q0: ", round(Q0d, digits = 2),
+                                         "\n Pmax: ", round(Pmax_curve, digits = 2),
+                                         "\n Omax: ", round(Omax_curve, digits = 2)),
+                          x = Inf, y = Inf, hjust = 1, vjust = 1),
+            alpha = c(0,1), # two sets of geom_text appear due to split axis needed by beezdemand
+            size = 5, fontface = "bold", show.legend = F) +
+  theme(title = element_text(size = 25, face = "bold"),
+        axis.title = element_text(size = 15, face = "bold"),
+        axis.text = element_text(size = 10, face = "bold"),
+        strip.background = element_blank(), strip.text = element_blank())
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+nonW.part.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff",
                         k = nonW.k.value.final, agg=NULL)
 
 nonW.spec.curve <- nonW.part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
@@ -605,15 +648,6 @@ PT.nonW <- PT.nonW.index[c("id","Alpha","Breakpoint","Intensity","Omax","Pmax")]
 
 PT.ALL.DATA <- merge(PT.nonW,PT.W.index.final, by = "id", all.y = TRUE)
 
-##### ----- INDEX LEVEL VARIABLES DESCRIPTIVE STATISTICS:
-
-PT.describe <- psych::describe(PT.ALL.DATA[c("Alpha","Intensity", "Omax", "Pmax", "Breakpoint",
-                            "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")])
-PT.describe$vars <- c("Alpha", "Intensity", "Omax", "Pmax", "Breakpoint",
-                      "Alpha_W", "Intensity_W", "Omax_W", "Pmax_W", "Breakpoint_W")
-
-PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
-
 ##### ----- PRICE LEVEL VARIABLES (PRICES) DESCRIPTIVE STATISTICS:
 
 price.stats.W <- psych::describe(PT.wide2[c(prices)])
@@ -627,11 +661,146 @@ price.stats.nonW <- price.stats.nonW[c("vars","n","mean","sd","se","min","max")]
 
 price.stats <- rbind(price.stats.W,price.stats.nonW)
 
+##### ----- DATA TRANSFORMATIONS
+#################################################################################################
+# Determine best transformation of (winsorized) variables and save to data set
+# since a value of 0 is possible for Breakpoint, Intensity, Omax, and Pmax,
+# a small constant (0.1) is added prior to log10 transformation
+
+se <- function(x) sqrt(var(x,na.rm = T)/length(x))
+
+PT.TRFMED <- PT.ALL.DATA
+
+PT.LOG.TRFMED <- log10(PT.ALL.DATA[c("Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")]+0.1)
+PT.LOG.TRFMED <- PT.LOG.TRFMED %>%
+  rename(Alpha_Log = Alpha_W, Breakpoint_Log = Breakpoint_W,
+         Intensity_Log = Intensity_W, Omax_Log = Omax_W, Pmax_Log = Pmax_W)
+
+PT.SQRT.TRFMED <- sqrt(PT.ALL.DATA[c("Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")])
+PT.SQRT.TRFMED <- PT.SQRT.TRFMED %>%
+  rename(Alpha_Sqrt = Alpha_W, Breakpoint_Sqrt = Breakpoint_W,
+         Intensity_Sqrt = Intensity_W, Omax_Sqrt = Omax_W, Pmax_Sqrt = Pmax_W)
+
+PT.TRFMED <- cbind(PT.TRFMED,PT.LOG.TRFMED,PT.SQRT.TRFMED)
+PT.ALL.TRANSFORMED <- PT.TRFMED ### TO SAVE AS OUTPUT
+
+PT.TRFMED <- PT.TRFMED %>%
+  rename(Alpha_NonWinsorized = Alpha, Alpha_Winsorized = Alpha_W,
+         Breakpoint_NonWinsorized = Breakpoint, Breakpoint_Winsorized = Breakpoint_W,
+         Intensity_NonWinsorized = Intensity, Intensity_Winsorized = Intensity_W,
+         Omax_NonWinsorized = Omax, Omax_Winsorized = Omax_W,
+         Pmax_NonWinsorized = Pmax, Pmax_Winsorized = Pmax_W)
+
+PT.TRFMED.LONG <- reshape(as.data.frame(PT.TRFMED), idvar = "id",
+                  varying = c("Alpha_NonWinsorized", "Alpha_Winsorized", "Alpha_Log", "Alpha_Sqrt",
+                             "Breakpoint_NonWinsorized", "Breakpoint_Winsorized", "Breakpoint_Log", "Breakpoint_Sqrt",
+                             "Intensity_NonWinsorized", "Intensity_Winsorized", "Intensity_Log", "Intensity_Sqrt",
+                             "Omax_NonWinsorized", "Omax_Winsorized", "Omax_Log", "Omax_Sqrt",
+                             "Pmax_NonWinsorized", "Pmax_Winsorized", "Pmax_Log", "Pmax_Sqrt"),
+                  timevar = "Transformation", sep = "_", direction = "long")
+
+PT.TRFMED.LONG$Transformation <- factor(PT.TRFMED.LONG$Transformation,
+                                        levels = c("NonWinsorized","Winsorized","Log","Sqrt"))
+
+##### ----- Visualize Non-Winsorized, Winsorized, and Transformed (Log and Sqrt) Purchase Task Variables
+
+trfmed.stats <- PT.TRFMED.LONG %>% group_by(Transformation) %>%
+  summarize(Alpha_skew = skew(Alpha), Alpha_kur = kurtosi(Alpha), Alpha_se = se(Alpha),
+            Alpha_zmin = min(scale(Alpha), na.rm = T), Alpha_zmax = max(scale(Alpha), na.rm = T),
+            Breakpoint_skew = skew(Breakpoint), Breakpoint_kur = kurtosi(Breakpoint), Breakpoint_se = se(Breakpoint),
+            Breakpoint_zmin = min(scale(Breakpoint), na.rm = T), Breakpoint_zmax = max(scale(Breakpoint), na.rm = T),
+            Intensity_skew = skew(Intensity), Intensity_kur = kurtosi(Intensity), Intensity_se = se(Intensity),
+            Intensity_zmin = min(scale(Intensity), na.rm = T), Intensity_zmax = max(scale(Intensity), na.rm = T),
+            Omax_skew = skew(Omax), Omax_kur = kurtosi(Omax), Omax_se = se(Omax),
+            Omax_zmin = min(scale(Omax), na.rm = T), Omax_zmax = max(scale(Omax), na.rm = T),
+            Pmax_skew = skew(Pmax), Pmax_kur = kurtosi(Pmax), Pmax_se = se(Pmax),
+            Pmax_zmin = min(scale(Pmax), na.rm = T), Pmax_zmax = max(scale(Pmax), na.rm = T))
+
+trfmed.stats[c(2:26)] <- round(trfmed.stats[c(2:26)], digits = 2)
+
+#################################################################################################
+#################################################################################################
+##### TRANSFORMATIONS: Chose Desired Transformation for each purchase task variable below
+##### in the following section.
+
+##### ----- ALPHA:
+
+### NOTE: If Elasticity (Alpha) is left untransformed, multiplying by a constant
+### is recommended as the values are quite small and can cause issues in model estimation.
+
+ggplot(PT.TRFMED.LONG, aes (x = Alpha, fill = Transformation)) + geom_histogram(alpha = 0.5, show.legend = F) +
+  ylab("Count") + theme_apa() + theme(strip.text = element_text(size = 13, face = "bold"), strip.background = element_blank(), axis.title.x = element_text(size = 20, face = "bold")) +
+ geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Alpha_se, "\n Skew: ", Alpha_skew, "\n Kurtosis: ", Alpha_kur, "\n Z-Score Min: ", Alpha_zmin, "\n Z-Score Max: ", Alpha_zmax),
+                                       group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+##### ----- Breakpoint:
+
+ggplot(PT.TRFMED.LONG, aes (x = Breakpoint, fill = Transformation)) + geom_histogram(alpha = 0.5, show.legend = F) +
+  ylab("Count") + theme_apa() + theme(strip.text = element_text(size = 13, face = "bold"), strip.background = element_blank(), axis.title.x = element_text(size = 20, face = "bold")) +
+  geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Breakpoint_se, "\n Skew: ", Breakpoint_skew, "\n Kurtosis: ", Breakpoint_kur, "\n Z-Score Min: ", Breakpoint_zmin, "\n Z-Score Max: ", Breakpoint_zmax),
+                                        group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+##### ----- Intensity:
+
+ggplot(PT.TRFMED.LONG, aes (x = Intensity, fill = Transformation)) + geom_histogram(alpha = 0.5, show.legend = F) +
+  ylab("Count") + theme_apa() + theme(strip.text = element_text(size = 13, face = "bold"), strip.background = element_blank(), axis.title.x = element_text(size = 20, face = "bold")) +
+  geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Intensity_se, "\n Skew: ", Intensity_skew, "\n Kurtosis: ", Intensity_kur, "\n Z-Score Min: ", Intensity_zmin, "\n Z-Score Max: ", Intensity_zmax),
+                                        group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+##### ----- Omax:
+
+ggplot(PT.TRFMED.LONG, aes (x = Omax, fill = Transformation)) + geom_histogram(alpha = 0.5, show.legend = F) +
+  ylab("Count") + theme_apa() + theme(strip.text = element_text(size = 13, face = "bold"), strip.background = element_blank(), axis.title.x = element_text(size = 20, face = "bold")) +
+  geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Omax_se, "\n Skew: ", Omax_skew, "\n Kurtosis: ", Omax_kur, "\n Z-Score Min: ", Omax_zmin, "\n Z-Score Max: ", Omax_zmax),
+                                        group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+##### ----- Pmax:
+
+ggplot(PT.TRFMED.LONG, aes (x = Pmax, fill = Transformation)) + geom_histogram(alpha = 0.5, show.legend = F) +
+  ylab("Count") + theme_apa() + theme(strip.text = element_text(size = 13, face = "bold"), strip.background = element_blank(), axis.title.x = element_text(size = 20, face = "bold")) +
+  geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Pmax_se, "\n Skew: ", Pmax_skew, "\n Kurtosis: ", Pmax_kur, "\n Z-Score Min: ", Pmax_zmin, "\n Z-Score Max: ", Pmax_zmax),
+                                        group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
+
+##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
+#################################################################################################
+
+##### TRANSFORMATIONS:
+
+### BOTH Winsorized and Non-Winsorized values are retained, with log10 and square root
+### transformations of the winsorized index-level variables included in both
+### the saved data and the descriptive statistics
+
+PT.describe <- psych::describe(PT.ALL.TRANSFORMED[c("Alpha","Alpha_W","Alpha_Log","Alpha_Sqrt",
+                                                    "Breakpoint","Breakpoint_W","Breakpoint_Log","Breakpoint_Sqrt",
+                                                    "Intensity","Intensity_W","Intensity_Log","Intensity_Sqrt",
+                                                    "Omax","Omax_W","Omax_Log","Omax_Sqrt",
+                                                    "Pmax","Pmax_W","Pmax_Log","Pmax_Sqrt")])
+
+PT.describe$vars <- c("Alpha","Alpha_W","Alpha_Log","Alpha_Sqrt",
+                      "Breakpoint","Breakpoint_W","Breakpoint_Log","Breakpoint_Sqrt",
+                      "Intensity","Intensity_W","Intensity_Log","Intensity_Sqrt",
+                      "Omax","Omax_W","Omax_Log","Omax_Sqrt",
+                      "Pmax","Pmax_W","Pmax_Log","Pmax_Sqrt")
+
+PT.describe <- PT.describe[c("vars","n","mean","sd","se","min","max")]
+
 ##### ----- WRITE ALL TO CREATE A REPORT
 #################################################################################################
 # These files will be located in the working directory (chosen by the user)
 
-write.csv(PT.ALL.DATA, "purchase.task.csv", row.names = FALSE) ### PT DATA (WINSORIZED & NON-WINSORIZED)
+write.csv(PT.ALL.TRANSFORMED, "purchase.task.csv", row.names = FALSE) ### PT DATA (WINSORIZED & NON-WINSORIZED)
 write.csv(PT.describe,"PT.variables.csv", row.names = FALSE) ### PT VARIABLES (WINSORIZED & NON-WINSORIZED)
 write.csv(price.stats, "price.level.variables.csv", row.names = FALSE) ### (WINSORIZED & NON-WINSORIZED)
 write.csv(df.winsor.track, "Appendix.csv", row.names = FALSE)  ### Outlier changes by ID (WINSORIZED)
