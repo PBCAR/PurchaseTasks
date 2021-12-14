@@ -1,5 +1,9 @@
 [![DOI](https://zenodo.org/badge/305256955.svg)](https://zenodo.org/badge/latestdoi/305256955)
 
+# Package Release
+
+This script is being used to build a package that will provide a systematic approach to purchase task data processing. Please stay tuned!
+
 # PurchaseTasks Repository 
 This repository contains the script for processing purchase task data. This READ ME document introduces users to purchase tasks, and walks users through the process of running this script who have little working knowledge of R.
 
