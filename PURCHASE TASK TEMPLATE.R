@@ -374,9 +374,7 @@ spec.curve <- part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
 colnames(spec.curve) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
 
 all.out <- merge(PT.emp,spec.curve)
-all.out$id <- as.integer(all.out$id)
 all.out <- all.out[order(all.out$id),]
-all.out$id <- as.character(all.out$id)
 
 PT.final.results <- bind_rows(mean.curve.final,all.out)
 
@@ -472,9 +470,7 @@ nonW.spec.curve <- nonW.part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","
 colnames(nonW.spec.curve) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
 
 nonW.all.out <- merge(PT.nonW.emp,nonW.spec.curve)
-nonW.all.out$id <- as.integer(nonW.all.out$id)
 nonW.all.out <- nonW.all.out[order(nonW.all.out$id),]
-nonW.all.out$id <- as.character(nonW.all.out$id)
 
 PT.nonW.final.results <- bind_rows(nonW.mean.curve.final,nonW.all.out)
 
