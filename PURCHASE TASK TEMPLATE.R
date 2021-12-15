@@ -360,7 +360,7 @@ if(as.numeric(min(mod.prices))==0)
 
 if(as.numeric(min(mod.prices))!=0)
   (
-    alpha_val <- c(0)
+    alpha_val <- c(1)
   )
 
 
