@@ -11,38 +11,25 @@ knitr::opts_chunk$set(error = TRUE, comment = "", results = 'asis')
 ##### ----------  REQUIRED CHANGES BY USER:
 ###############################################################################################
 ##### PLEASE MAKE THE NECESSARY CHANGES IN THIS R CODE CHUNK ONLY
-
 ### a) SAVE this script in the same file location as the data set.
 ###    The report will be saved in this location.
-
 ### b) NAME of .csv file:
-
 pt.name <- "PBCAR_PT.csv"
-
 ### c) NAME of ID variable:
-
 id.name <- "ID"
-
 ### d) COPY & PASTE names all purchase task item names here:
-
 purchase.task.names <- c("apt000","apt025","apt050","apt1","apt150",
                          "apt2","apt250","apt3","apt4","apt5","apt6",
                          "apt7","apt8","apt9","apt10","apt11","apt12",
                          "apt13","apt14","apt15","apt16","apt18","apt20",	
                          "apt22","apt24","apt26","apt28","apt30","apt35","apt40")
-
 ### e) ASSIGN the price associated with each purchase task item:
-
 prices <- c("0","0.25","0.50","1","1.50","2","2.50","3","4","5","6",
             "7","8","9","10","11","12","13","14","15","16","18","20",
             "22","24","26","28","30","35","40")
-
 ### f) IDENTIFY the maximum allowed value in the purchase task:
-
 max.val <- 99
-
 ### g) IDENTIFY total N individuals in data set
-
 tot.n <- 730
 
 ##### ----------  OPTIONAL CHANGES:
@@ -172,9 +159,16 @@ PT.wide <- reshape(as.data.frame(PT.long2), idvar = "id", v.names = "y", timevar
 colnames(PT.wide) <- item.names
 
 # CREATE z-scores in a separate data frame
-wide.zs <- scale(PT.wide, center = TRUE, scale = TRUE)
+wide.zs <- PT.wide
+wide.zs[c(prices)] <- scale(PT.wide[c(prices)], center = TRUE, scale = TRUE)
 
+# CREATE a new data frame for the winsorized data, so original values can later be referred to
 PT.wide2 <- PT.wide
+
+##### MODIFIED Price List (if final price array not reached)
+price.count <- colSums(PT.wide[prices])
+price_df <- data.frame(price.count,prices)
+mod.prices <- price_df$prices[price_df$price.count!=0]
 
 ##### ----------  WINSORIZING TYPE - OPTION 1:
 #################################################################################################
@@ -230,7 +224,7 @@ if (wins.type=="preserve_order"){
 }
 
 # IDENTIFY which items have been changed for which IDs via winsorization
-df.winsor.track <- data.frame(ID=integer(),
+df.winsor.track <- data.frame(ID=character(),
                               Price=numeric(),
                               Bef_Winsor=integer(), 
                               After_Winsor=integer())
@@ -300,9 +294,7 @@ spec.curve <- part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
 colnames(spec.curve) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
 
 all.out <- merge(PT.emp,spec.curve)
-all.out$id <- as.integer(all.out$id)
 all.out <- all.out[order(all.out$id),]
-all.out$id <- as.character(all.out$id)
 
 PT.final.results <- bind_rows(mean.curve.final,all.out)
 
@@ -312,7 +304,7 @@ for (id_num in PT.wide2$id){
   pt.sum <- sum(PT.wide2[PT.wide2$id==id_num,prices], na.rm = FALSE)
   last.amount <- PT.wide2[PT.wide2$id==id_num,length(prices)+1]
   if(is.na(PT.final.results$BP0[PT.final.results$id==id_num]) & (pt.sum==0)){
-    PT.final.results$Breakpoint[PT.final.results$id==id_num] <- 0
+    PT.final.results$Breakpoint[PT.final.results$id==id_num] <- as.numeric(min(mod.prices))
   } else if (is.na(PT.final.results$BP0[PT.final.results$id==id_num]) & (last.amount>0)){
     PT.final.results$Breakpoint[PT.final.results$id==id_num] <- as.numeric(prices)[length(prices)]+1
   }
@@ -376,9 +368,7 @@ nonW.spec.curve <- nonW.part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","
 colnames(nonW.spec.curve) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
 
 nonW.all.out <- merge(PT.nonW.emp,nonW.spec.curve)
-nonW.all.out$id <- as.integer(nonW.all.out$id)
 nonW.all.out <- nonW.all.out[order(nonW.all.out$id),]
-nonW.all.out$id <- as.character(nonW.all.out$id)
 
 PT.nonW.final.results <- bind_rows(nonW.mean.curve.final,nonW.all.out)
 
@@ -389,7 +379,7 @@ for (id_num in PT.wide$id){
   pt.nonW.sum <- sum(PT.wide[PT.wide$id==id_num,prices], na.rm = FALSE)
   nonW.last.amount <- PT.wide[PT.wide$id==id_num,length(prices)+1]
   if(is.na(PT.nonW.final.results$BP0[PT.nonW.final.results$id==id_num]) & (pt.nonW.sum==0)){
-    PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- 0
+    PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- as.numeric(min(mod.prices))
   } else if (is.na(PT.nonW.final.results$BP0[PT.nonW.final.results$id==id_num]) & (nonW.last.amount>0)){
     PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- as.numeric(prices)[length(prices)]+1
   }
@@ -436,7 +426,7 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(above_399)>0){
       q <- 1
       for (ab_399 in sort(above_399)){
-        cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),'\n','the ',var_name,' value was changed from ',
+        cat('For ID(s) ',all_out[all_out[,c(var_name)] == ab_399,c('id')],'\n','the ',var_name,' value was changed from ',
             ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
         q <- q + 1
