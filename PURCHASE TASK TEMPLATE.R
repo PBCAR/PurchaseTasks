@@ -205,7 +205,8 @@ PT.wide <- reshape(as.data.frame(PT.long2), idvar = "id", v.names = "y", timevar
 colnames(PT.wide) <- item.names
 
 # CREATE z-scores in a separate data frame
-wide.zs <- scale(PT.wide[c(prices)], center = TRUE, scale = TRUE)
+wide.zs <- PT.wide
+wide.zs[c(prices)] <- scale(PT.wide[c(prices)], center = TRUE, scale = TRUE)
 
 # CREATE a new data frame for the winsorized data, so original values can later be referred to
 PT.wide2 <- PT.wide
@@ -272,7 +273,7 @@ if (wins.type=="preserve_order"){
 }
 
 # IDENTIFY which items have been changed for which IDs via winsorization
-df.winsor.track <- data.frame(ID=integer(),
+df.winsor.track <- data.frame(ID=character(),
                               Price=numeric(),
                               Bef_Winsor=integer(),
                               After_Winsor=integer())
@@ -347,6 +348,22 @@ mean.curve.final <- mean.curve.final[,c("id","Q0d","K","Alpha","R2","EV","Omaxd"
 colnames(mean.curve.final) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
 
 ##### ----- Plot Mean Curve:
+
+### IF the minimum price == 0, then two plots are used by beezdemand,
+### resulting in two sets of geom_text data. Thus, if minimum price == 0,
+### then set alpha to 0 for the first plot
+
+if(as.numeric(min(mod.prices))==0)
+  (
+    alpha_val <- c(0,1)
+  )
+
+if(as.numeric(min(mod.prices))!=0)
+  (
+    alpha_val <- c(0)
+  )
+
+
 PlotCurve(mean.curve$adfs[[1]],
           mean.curve$dfres[1,],
           mean.curve$newdats[[1]]) +
@@ -356,8 +373,7 @@ PlotCurve(mean.curve$adfs[[1]],
                                          "\n Q0: ", round(Q0d, digits = 2),
                                          "\n Pmax: ", round(Pmax_curve, digits = 2),
                                          "\n Omax: ", round(Omax_curve, digits = 2)),
-                                   x = Inf, y = Inf, hjust = 1, vjust = 1),
-            alpha = c(0,1), # two sets of geom_text appear due to split axis needed by beezdemand
+                          x = Inf, y = Inf, hjust = 1, vjust = 1), alpha = alpha_val,
             size = 5, fontface = "bold", show.legend = F) +
   theme(title = element_text(size = 25, face = "bold"),
         axis.title = element_text(size = 15, face = "bold"),
@@ -384,7 +400,7 @@ for (id_num in PT.wide2$id){
   pt.sum <- sum(PT.wide2[PT.wide2$id==id_num,prices], na.rm = FALSE)
   last.amount <- PT.wide2[PT.wide2$id==id_num,length(prices)+1]
   if(is.na(PT.final.results$BP0[PT.final.results$id==id_num]) & (pt.sum==0)){
-    PT.final.results$Breakpoint[PT.final.results$id==id_num] <- 0
+    PT.final.results$Breakpoint[PT.final.results$id==id_num] <- as.numeric(min(mod.prices))
   } else if (is.na(PT.final.results$BP0[PT.final.results$id==id_num]) & (last.amount>0)){
     PT.final.results$Breakpoint[PT.final.results$id==id_num] <- as.numeric(prices)[length(prices)]+1
   }
@@ -452,8 +468,7 @@ PlotCurve(nonW.mean.curve$adfs[[1]],
                                          "\n Q0: ", round(Q0d, digits = 2),
                                          "\n Pmax: ", round(Pmax_curve, digits = 2),
                                          "\n Omax: ", round(Omax_curve, digits = 2)),
-                          x = Inf, y = Inf, hjust = 1, vjust = 1),
-            alpha = c(0,1), # two sets of geom_text appear due to split axis needed by beezdemand
+                          x = Inf, y = Inf, hjust = 1, vjust = 1), alpha = c(0,1),
             size = 5, fontface = "bold", show.legend = F) +
   theme(title = element_text(size = 25, face = "bold"),
         axis.title = element_text(size = 15, face = "bold"),
@@ -464,7 +479,7 @@ PlotCurve(nonW.mean.curve$adfs[[1]],
 #################################################################################################
 
 nonW.part.curve <- FitCurves(dat = PT.nonW.long2, equation = "koff",
-                        k = nonW.k.value.final, agg=NULL)
+                             k = nonW.k.value.final, agg=NULL)
 
 nonW.spec.curve <- nonW.part.curve[,c("id","Q0d","K","Alpha","R2","EV","Omaxd","Pmaxd")]
 colnames(nonW.spec.curve) <- c("id","Q0d","K","Alpha","R2","EV","Omax_curve","Pmax_curve")
@@ -481,7 +496,7 @@ for (id_num in PT.wide$id){
   pt.nonW.sum <- sum(PT.wide[PT.wide$id==id_num,prices], na.rm = FALSE)
   nonW.last.amount <- PT.wide[PT.wide$id==id_num,length(prices)+1]
   if(is.na(PT.nonW.final.results$BP0[PT.nonW.final.results$id==id_num]) & (pt.nonW.sum==0)){
-    PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- 0
+    PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- as.numeric(min(mod.prices))
   } else if (is.na(PT.nonW.final.results$BP0[PT.nonW.final.results$id==id_num]) & (nonW.last.amount>0)){
     PT.nonW.final.results$Breakpoint[PT.nonW.final.results$id==id_num] <- as.numeric(prices)[length(prices)]+1
   }
@@ -537,7 +552,7 @@ winsorize.index <- function(all_out_temp,var_name,delta) {
     if (length(above_399)>0){
       q <- 1
       for (ab_399 in sort(above_399)){
-        cat('For ID(s) ',as.numeric(all_out[all_out[,c(var_name)] == ab_399,c('id')]),'\n the ',var_name,' value was changed from ',
+        cat('For ID(s) ',all_out[all_out[,c(var_name)] == ab_399,c('id')],'\n the ',var_name,' value was changed from ',
             ab_399,' to ',max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta, '\n')
         all_out[,c(var_name)][all_out[,c(var_name)] == ab_399] <- max(all_out[,c(var_name)][alpha_zs < 3.99]) + q*delta
         q <- q + 1
@@ -577,7 +592,7 @@ PT.W.index <- PT.results
 zero.id.W <- PT.W.index[non_zero,]$id
 
 if(length(zero.id.W>0)){
-PT.W.index[(PT.W.index$id %in% zero.id.W),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+  PT.W.index[(PT.W.index$id %in% zero.id.W),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
 }
 
 # TO PRESERVE order, delta needs to not equal 0 (default delta value of 0.001)
@@ -603,7 +618,7 @@ PT.nonW.index <- PT.nonW.results
 zero.id.nonW <- PT.nonW.index[non_zero,]$id
 
 if(length(zero.id.nonW>0)){
-PT.nonW.index[(PT.nonW.index$id %in% zero.id.nonW),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
+  PT.nonW.index[(PT.nonW.index$id %in% zero.id.nonW),][,c('Q0d','Alpha','R2','EV','Omax','Pmax')] <- NA
 }
 
 ################  ----------  OUTPUT FOR PURCHASE TASK REPORTS  ----------  #####################
@@ -635,7 +650,7 @@ cat('Median R^2: ',median(PT.W.index$R2,na.rm=TRUE),
 # purchase task have NAs in the purchase task output
 
 PT.W.index.final <- merge(purchase.task.df[c("id")],
-  PT.W.index[c("id","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
+                          PT.W.index[c("id","Alpha","Breakpoint","Intensity","Omax","Pmax")], by = "id", all.x = TRUE)
 
 winso.names <- c("id","Alpha_W","Breakpoint_W","Intensity_W","Omax_W","Pmax_W")
 colnames(PT.W.index.final) <- winso.names
@@ -688,12 +703,12 @@ PT.TRFMED <- PT.TRFMED %>%
          Pmax_NonWinsorized = Pmax, Pmax_Winsorized = Pmax_W)
 
 PT.TRFMED.LONG <- reshape(as.data.frame(PT.TRFMED), idvar = "id",
-                  varying = c("Alpha_NonWinsorized", "Alpha_Winsorized", "Alpha_Log", "Alpha_Sqrt",
-                             "Breakpoint_NonWinsorized", "Breakpoint_Winsorized", "Breakpoint_Log", "Breakpoint_Sqrt",
-                             "Intensity_NonWinsorized", "Intensity_Winsorized", "Intensity_Log", "Intensity_Sqrt",
-                             "Omax_NonWinsorized", "Omax_Winsorized", "Omax_Log", "Omax_Sqrt",
-                             "Pmax_NonWinsorized", "Pmax_Winsorized", "Pmax_Log", "Pmax_Sqrt"),
-                  timevar = "Transformation", sep = "_", direction = "long")
+                          varying = c("Alpha_NonWinsorized", "Alpha_Winsorized", "Alpha_Log", "Alpha_Sqrt",
+                                      "Breakpoint_NonWinsorized", "Breakpoint_Winsorized", "Breakpoint_Log", "Breakpoint_Sqrt",
+                                      "Intensity_NonWinsorized", "Intensity_Winsorized", "Intensity_Log", "Intensity_Sqrt",
+                                      "Omax_NonWinsorized", "Omax_Winsorized", "Omax_Log", "Omax_Sqrt",
+                                      "Pmax_NonWinsorized", "Pmax_Winsorized", "Pmax_Log", "Pmax_Sqrt"),
+                          timevar = "Transformation", sep = "_", direction = "long")
 
 PT.TRFMED.LONG$Transformation <- factor(PT.TRFMED.LONG$Transformation,
                                         levels = c("NonWinsorized","Winsorized","Log","Sqrt"))
@@ -726,8 +741,8 @@ trfmed.stats[c(2:26)] <- round(trfmed.stats[c(2:26)], digits = 2)
 
 ggplot(PT.TRFMED.LONG, aes (x = Alpha, fill = Transformation)) + geom_histogram(alpha = 0.5, show.legend = F) +
   ylab("Count") + theme_apa() + theme(strip.text = element_text(size = 13, face = "bold"), strip.background = element_blank(), axis.title.x = element_text(size = 20, face = "bold")) +
- geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Alpha_se, "\n Skew: ", Alpha_skew, "\n Kurtosis: ", Alpha_kur, "\n Z-Score Min: ", Alpha_zmin, "\n Z-Score Max: ", Alpha_zmax),
-                                       group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
+  geom_text(trfmed.stats, mapping = aes(label = paste0("SE: ", Alpha_se, "\n Skew: ", Alpha_skew, "\n Kurtosis: ", Alpha_kur, "\n Z-Score Min: ", Alpha_zmin, "\n Z-Score Max: ", Alpha_zmax),
+                                        group = Transformation), x = Inf, y = Inf, hjust = 1, vjust = 1) + facet_wrap(~Transformation, scales = "free")
 
 ##### ^^^ AFTER RUNNING THIS CODE, CHECK PLOTS PANE
 #################################################################################################
