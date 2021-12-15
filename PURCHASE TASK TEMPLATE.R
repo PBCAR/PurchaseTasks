@@ -205,19 +205,19 @@ PT.wide <- reshape(as.data.frame(PT.long2), idvar = "id", v.names = "y", timevar
 colnames(PT.wide) <- item.names
 
 # CREATE z-scores in a separate data frame
-wide.zs <- scale(PT.wide, center = TRUE, scale = TRUE)
+wide.zs <- scale(PT.wide[c(prices)], center = TRUE, scale = TRUE)
 
 # CREATE a new data frame for the winsorized data, so original values can later be referred to
 PT.wide2 <- PT.wide
 
 ##### MODIFIED Price List (if final price array not reached)
-nan.price <- psych::describe(wide.zs)
-nan.price$vars <- c("id",prices)
-mod.prices <- nan.price$vars[nan.price$n!=0]
+price.count <- colSums(PT.wide[prices])
+price_df <- data.frame(price.count,prices)
+mod.prices <- price_df$prices[price_df$price.count!=0]
 
 ##### ----------  WINSORIZING TYPE - OPTION 1:
 #################################################################################################
-# 1: Values with a SD over 3.99 are replaced with their corresponding 3.99 regular value rounded up
+# 1: Values with a z-score over 3.99 are replaced with their corresponding 3.99 regular value rounded up
 
 if (wins.type=="1_higher_sd"){
   for (price in mod.prices){
