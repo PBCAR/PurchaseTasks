@@ -2,7 +2,7 @@
 
 # Package Release
 
-This script is being used to build a package that will provide a systematic approach to purchase task data processing. Please stay tuned!
+This script has been used to build an R package that provides a systematic approach to purchase task data processing. Download instructions and details are available here: https://github.com/PBCAR/PThelper
 
 # PurchaseTasks Repository 
 This repository contains the script for processing purchase task data. This READ ME document introduces users to purchase tasks, and walks users through the process of running this script who have little working knowledge of R.
