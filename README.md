@@ -1,8 +1,12 @@
 [![DOI](https://zenodo.org/badge/305256955.svg)](https://zenodo.org/badge/latestdoi/305256955)
 
+# !! ARCHIVED !! 
+
+This script is based on an older version of PThelper, and as such has been archived in favour of the release of PThelepr 3.0.0. More information can be found [here].(https://github.com/PBCAR/PThelper)
+
 # Package Release
 
-This script has been used to build an R package that provides a systematic approach to purchase task data processing. Download instructions and details for the {PThelper} package are available [here](https://github.com/PBCAR/PThelper).
+This script has been used to build an R package that provides a systematic approach to purchase task data processing. Download instructions and details for the {PThelper} package are available [here](https://github.com/PBCAR/PThelper_Archive).
 
 # PurchaseTasks Repository 
 This repository contains the script for processing purchase task data. This READ ME document introduces users to purchase tasks, and walks users through the process of running this script who have little working knowledge of R.
