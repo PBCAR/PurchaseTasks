@@ -2,7 +2,7 @@
 
 # !! ARCHIVED !! 
 
-This script is based on an older version of PThelper, and as such has been archived in favour of the release of PThelepr 3.0.0. More information can be found [here].(https://github.com/PBCAR/PThelper)
+This script is based on an older version of PThelper, and as such has been archived in favour of the release of PThelepr 0.3.0. More information can be found [here].(https://github.com/PBCAR/PThelper)
 
 # Package Release
 
